@@ -1,0 +1,650 @@
+This is bltzread.info, produced by makeinfo version 7.2 from
+bltzread.texi.
+
+INFO-DIR-SECTION Emacs misc features
+START-INFO-DIR-ENTRY
+* bltzread: (bltzread). Reading mode that colours words by how well you know them.
+END-INFO-DIR-ENTRY
+
+
+File: bltzread.info,  Node: Top,  Next: What bltzread is,  Up: (dir)
+
+bltzread Reference Manual
+*************************
+
+* Menu:
+
+* What bltzread is::
+* The five levels::
+* Starting and stopping::
+* Changing a word's level::
+* The word card::
+* The dictionary::
+* Reading sessions how words rise by themselves::
+* The review list::
+* Your skip lists::
+* Where bltzread keeps its data::
+* Options::
+* Using bltzread with subtle::
+* Limits::
+
+-- The Detailed Node Listing --
+
+Reading sessions: how words rise by themselves
+
+* Telling bltzread what you read::
+* Pages and chapters::
+
+Options
+
+* Language and words::
+* Levels::
+* Skip lists::
+* Storage::
+* Card and dictionary::
+* Keys::
+* Reading sessions::
+* Pasted text::
+* Colours::
+
+
+File: bltzread.info,  Node: What bltzread is,  Next: The five levels,  Prev: Top,  Up: Top
+
+1 What bltzread is
+******************
+
+bltzread helps you read text in a language you are learning.  It colours
+every word by how well you know it, shows a small card with the
+dictionary entry when you rest on a word, and remembers your progress.
+When a word becomes fully known, it can be added to your bltzr skip
+list, so bltzr stops listing it as new vocabulary.
+
+   bltzread never changes the text.  It only draws colours on top of it,
+and the buffer is read-only while the mode is on.  It works in any
+buffer: a plain text file, a web page in EWW, or a book opened with
+nov.el.
+
+   This manual says what every feature and option does.  The separate
+_bltzread Tutorial_ walks you through using it step by step.
+
+
+File: bltzread.info,  Node: The five levels,  Next: Starting and stopping,  Prev: What bltzread is,  Up: Top
+
+2 The five levels
+*****************
+
+Every word has a level:
+
+Level 1, New
+     You have just met it.  Strongest colour.
+Level 2, Recognized
+     You have seen it and half remember it.
+Level 3, Familiar
+     You usually understand it.
+Level 4, Learned
+     You nearly always understand it.  Only an underline.
+Level 5, Known
+     You know it.  No colour.  This is where a word may go onto your
+     skip list.
+Ignored
+     Names, numbers and other words you do not want to learn.  Shown
+     dimly and never counted.
+
+   Words on your bltzr skip lists start out as level 5.  Words bltzread
+has never seen start at level 1.
+
+
+File: bltzread.info,  Node: Starting and stopping,  Next: Changing a word's level,  Prev: The five levels,  Up: Top
+
+3 Starting and stopping
+***********************
+
+Run ‘M-x bltzread-mode’ in a buffer.  bltzread asks for the language (a
+three letter code such as ‘slv’ or ‘pli’) unless the buffer already has
+one or you have set a default.  It asks bltzr about the words, then
+paints them.
+
+   Running ‘M-x bltzread-mode’ again turns it off and makes the buffer
+writable again.
+
+   To read text you have copied from somewhere else, run ‘M-x
+bltzread-read-text’.  It uses the selected region, or the clipboard, or
+asks you to type the text.  It opens a comfortable reading page with
+larger type, wider line spacing and side margins.
+
+
+File: bltzread.info,  Node: Changing a word's level,  Next: The word card,  Prev: Starting and stopping,  Up: Top
+
+4 Changing a word's level
+*************************
+
+A level applies to the whole word: setting ‘3’ on _hiše_ also sets
+_hiša_ and _hišo_ (see ‘bltzread-level-scope’).  Clean reads, in
+contrast, count only for the form you actually read.  Numbers such as
+‘24’, ‘5.26’ or ‘2,81’ are never marked.
+
+   Put the cursor on a word and press:
+
+‘1’ to ‘5’
+     Set that level.
+‘i’
+     Ignore the word.  Pressing ‘i’ on an ignored word brings back its
+     old level.
+‘u’
+     Undo the last bltzread change even when other edits came in
+     between.  Ordinary ‘undo’ (‘C-/’, ‘C-x u’) and ‘undo-redo’ (‘C-?’)
+     also take back and restore bltzread changes (level, ignore, note,
+     lookup, finished session) in order with everything else, although
+     the buffer is read-only.
+‘c’
+     Close the card.  It returns when you move to another word.
+‘d’ and ‘D’
+     Show the next or previous dictionary entry when a word has several.
+‘l’
+     Look it up in the dictionary (also double-click with the mouse).
+‘N’
+     Write yourself a note about the word.  The note is shown in the
+     card.
+‘}’ and ‘{’
+     Jump to the next or previous word that is still unknown.  Give a
+     count to jump further: ‘C-5 }’ moves five unknown words on (‘M-5’
+     or ‘C-u 5’ in a terminal).  A negative count goes the other way.
+     If fewer remain, bltzread moves as far as it can and says how far.
+
+   These are single keys with no modifier.  In a subtitle buffer (meow
+motion state, where only ‘j’ and ‘k’ are taken) they are free.  The two
+packages read alike: ‘{}’ are unknown words, ‘()’ are cues.
+
+   All of these also work after the prefix ‘s’ (‘bltzread-prefix-key’),
+for example ‘s 3’.  The prefix also gives:
+
+‘s f’
+     Finish the reading session (see below).
+‘s k’ or ‘s K’
+     Mark every word in the range you pick as known.
+‘s r’
+     Open the review list.
+‘s m’
+     Change how you pick the range you read.
+‘s <’ and ‘s >’
+     Set the start and end of the range yourself.
+‘s a’
+     Annotate: read the words again and paint them.
+‘s L’
+     Change the buffer's language.
+‘s .’
+     Show the card for the word under the cursor.
+‘s n’ and ‘s p’
+     Next and previous unknown word (like ‘}’ and ‘{’).
+
+   ‘M-x bltzread-avy-unknown’ (in ‘bltzread-avy.el’, needs the ‘avy’
+package) tags every unknown word in view with an avy hint.  Type a hint
+to go to that word and open its card.  Escape or ‘C-g’ removes the tags
+and continues as ‘avy-goto-char-timer’.  It has no key by default; bind
+it, or run it from a hook (see _Using bltzread with subtle_).
+
+
+File: bltzread.info,  Node: The word card,  Next: The dictionary,  Prev: Changing a word's level,  Up: Top
+
+5 The word card
+***************
+
+When the cursor rests on a word for a moment, a small card appears.  It
+shows the word, its basic form, its level, how many clean reads it has,
+your note, and the dictionary entry.  In a graphical Emacs the card
+floats above the word, always above and never below: if there is no
+room, the window is scrolled to make some.  The card follows the word
+when the text scrolls.  It disappears when you switch buffer, window or
+frame.  After you set a level the card hides; it returns when you leave
+the word and come back, or when you press ‘s .’.  By default
+(‘bltzread-popup-only-on-motion’) a card opens only after a command
+moved the cursor onto a word, so text scrolled for you, for example by
+subtle, neither opens cards nor counts lookups.  In a terminal it
+appears in a window at the bottom.
+
+   Looking a word up with ‘l’ shows a longer entry.  Lookups are counted
+once per word per session.  Merely passing over a word, for example with
+‘}’, is not a lookup: with the default ‘bltzread-lookup-counts’
+(‘command’) only ‘l’ counts; set it to ‘interaction’ to let ‘d’, ‘D’ and
+‘s .’ count too.
+
+
+File: bltzread.info,  Node: The dictionary,  Next: Reading sessions how words rise by themselves,  Prev: The word card,  Up: Top
+
+6 The dictionary
+****************
+
+bltzread uses sdcv, a command-line dictionary program that reads
+StarDict dictionaries.  You tell bltzread where your dictionaries are
+and which to use for each language.  If sdcv or the dictionary is
+missing, the card simply has no entry; nothing breaks.
+
+   A dictionary can be named by its exact name, its folder name (‘dpd’),
+or any part of the name that picks out only one.  A language with no
+entry in ‘bltzread-sdcv-dictionaries’ searches no dictionary at all (see
+‘bltzread-sdcv-unlisted-languages’), so Slovene entries never turn up in
+Pali.  bltzread warns once when a configured name matches nothing.  ‘M-x
+bltzread-dict-diagnose’ shows the program, the folder, every dictionary
+found and what each language uses, and runs a test lookup.
+
+   Some big dictionaries, such as the Digital Pāḷi Dictionary, have an
+index that is not in the order sdcv expects, so exact lookups miss
+almost every word.  ‘tools/sdcv-fix-index.py SRC OUT’ writes a fixed
+copy and leaves the original alone.  Point
+‘bltzread-sdcv-data-dir-alist’ at a folder holding the copy.
+
+   You can replace sdcv with your own function (see the options).
+
+
+File: bltzread.info,  Node: Reading sessions how words rise by themselves,  Next: The review list,  Prev: The dictionary,  Up: Top
+
+7 Reading sessions: how words rise by themselves
+************************************************
+
+You do not have to set every level by hand.  bltzread also promotes
+words as you read:
+
+  1. You read part of the text.
+  2. You tell bltzread which part you read.  This is a "finish": press
+     ‘s f’, or answer the question when you close the buffer.  A program
+     that closes the buffer for you can call ‘bltzread-offer-record’
+     first; it asks once, and the question is not repeated on close.
+  3. Every word in that part that you did not look up gets one "clean
+     read".
+  4. When a word has enough clean reads it moves up one level.  How many
+     it needs depends on the level (see
+     ‘bltzread-promotion-thresholds’).
+  5. A word you looked up during the session loses its clean reads and
+     keeps its level.
+
+   A level you set by hand always wins over this automatic climbing.
+
+   Press ‘C-u s f’ to finish and mark everything in the range as known
+at once.
+
+* Menu:
+
+* Telling bltzread what you read::
+* Pages and chapters::
+
+
+File: bltzread.info,  Node: Telling bltzread what you read,  Next: Pages and chapters,  Up: Reading sessions how words rise by themselves
+
+7.1 Telling bltzread what you read
+==================================
+
+There are four ways, chosen by ‘bltzread-range-method’.  Pick the one
+that feels best; you can try them in ‘M-x bltzread-range-playground’.
+
+farthest
+     bltzread proposes everything from where you started to the farthest
+     place you reached.  You confirm or adjust.  By default the place
+     reached is the bottom of the text on screen.  With
+     ‘bltzread-range-farthest-source’ set to a function (for example
+     subtle's ‘subtle-played-through-position’) it is whatever that
+     function returns, so only text that was played counts.
+     ‘bltzread-range-start-function’ does the same for the start,
+     because a played run need not begin at the top.
+points
+     You mark a start and an end yourself with ‘s <’ and ‘s >’.
+paragraphs
+     Paragraph numbers appear in the margin; you type from and to.
+lines
+     The same, using line numbers.
+
+   After the range is counted, bltzread may move your bookmark to the
+end of it.
+
+
+File: bltzread.info,  Node: Pages and chapters,  Prev: Telling bltzread what you read,  Up: Reading sessions how words rise by themselves
+
+7.2 Pages and chapters
+======================
+
+In nov.el, turning a page replaces the text, so bltzread paints the new
+page and forgets the old range.  Finish the session (‘s f’) before you
+turn the page if you want that reading counted.  Closing the buffer also
+asks.
+
+
+File: bltzread.info,  Node: The review list,  Next: Your skip lists,  Prev: Reading sessions how words rise by themselves,  Up: Top
+
+8 The review list
+*****************
+
+Words that reach level 5 are not put on your skip list straight away.
+They wait in a queue.  ‘M-x bltzread-review’ (or ‘s r’) shows the queue:
+
+‘a’
+     Add this word (every word starts as add).
+‘d’
+     Decide later.  It stays in the queue.
+‘r’
+     Reject.  The word drops back to level 4.
+‘A’
+     Mark every word add.
+‘x’
+     Apply: write the added words to the skip list.
+
+   bltzread makes a ‘.bak’ copy of the list file before it writes.  If
+you prefer, words can be written at once without review.
+
+
+File: bltzread.info,  Node: Your skip lists,  Next: Where bltzread keeps its data,  Prev: The review list,  Up: Top
+
+9 Your skip lists
+*****************
+
+bltzr has two skip lists: exact words (only the spelling you list) and
+word families (a basic word and all its forms).  By default bltzread
+adds the exact spelling you read to the exact-words list.  You can
+choose word families instead, or be asked each time, and set this
+separately per language.
+
+   bltzread finds the files in your bltzr settings file
+(‘~/.config/bltzr/bltzr.toml’).  You can name the files yourself
+instead.
+
+
+File: bltzread.info,  Node: Where bltzread keeps its data,  Next: Options,  Prev: Your skip lists,  Up: Top
+
+10 Where bltzread keeps its data
+********************************
+
+One file per language, in ‘bltzread-state-directory’ (by default a
+folder named ‘bltzread’ in your Emacs directory).  It holds levels,
+clean-read counts, notes, the queue and a short history.  Files are
+plain text and saved a few seconds after a change.
+
+
+File: bltzread.info,  Node: Options,  Next: Using bltzread with subtle,  Prev: Where bltzread keeps its data,  Up: Top
+
+11 Options
+**********
+
+You can set any of these with ‘M-x customize-group RET bltzread’.
+
+* Menu:
+
+* Language and words::
+* Levels::
+* Skip lists::
+* Storage::
+* Card and dictionary::
+* Keys::
+* Reading sessions::
+* Pasted text::
+* Colours::
+
+
+File: bltzread.info,  Node: Language and words,  Next: Levels,  Up: Options
+
+11.1 Language and words
+=======================
+
+‘bltzread-bltzr-executable’
+     Name or path of bltzr.  Default ‘bltzr’.
+‘bltzread-bltzr-extra-args’
+     Extra arguments for every bltzr call.
+‘bltzread-default-language’
+     Language used when a buffer has none.  Nil means ask.
+‘bltzread-word-regexp’
+     What counts as a word.
+‘bltzread-word-regexp-alist’
+     A different word pattern for particular languages.
+‘bltzread-track-by’
+     ‘form’ keeps a level for each spelling.  ‘lemma’ keeps one level
+     for a basic word and all its forms.
+‘bltzread-skip-numerals’
+     Never mark a token with no letter in it.  Default yes.
+‘bltzread-make-read-only’
+     Make the buffer read-only while the mode is on.  Default yes.
+
+
+File: bltzread.info,  Node: Levels,  Next: Skip lists,  Prev: Language and words,  Up: Options
+
+11.2 Levels
+===========
+
+‘bltzread-promotion-thresholds’
+     Clean reads needed to climb from level 1, 2, 3 and 4.  Default 3 3
+     4 5.
+‘bltzread-count-each-occurrence’
+     Count a word every time it appears in the range, instead of once
+     per session.
+‘bltzread-lookup-effect’
+     What a lookup does: ‘reset-reads’, ‘demote’ (also lose a level), or
+     ‘nothing’.
+‘bltzread-level-scope’
+     ‘word’ (default): setting a level changes every form of the word.
+     ‘form’: only that spelling.
+‘bltzread-lookup-counts’
+     What counts as a lookup: ‘command’ (only ‘l’, the default),
+     ‘interaction’ (‘l’, ‘d’, ‘D’, ‘s .’), or ‘popup’ (the automatic
+     card, but only after ‘bltzread-lookup-dwell’ seconds on the word).
+‘bltzread-lookup-dwell’
+     Seconds the card must stay on a word before it counts, for ‘popup’.
+     Default 1.5.
+‘bltzread-unknown-max-level’
+     Words at or below this level are "unknown" for the jump keys.
+
+
+File: bltzread.info,  Node: Skip lists,  Next: Storage,  Prev: Levels,  Up: Options
+
+11.3 Skip lists
+===============
+
+‘bltzread-known-write-policy’
+     ‘unset’ (default): acts as ‘review’ and warns once per session that
+     you have not chosen.  ‘review’: words wait in the queue.
+     ‘immediate’: written the moment they reach level 5.
+‘bltzread-warn-known-write-unset’
+     Set to nil to silence that warning.  Better: choose a policy.
+‘bltzread-list-target’ and ‘bltzread-list-target-alist’
+     Which list receives known words, overall and per language.
+‘bltzread-skip-exact-words-files’ and ‘bltzread-skip-word-families-files’
+     Your own file names per language.
+‘bltzread-bltzr-config-file’
+     Which bltzr settings file to read.
+‘bltzread-skip-lists-count-as-known’
+     Treat words already on the lists as level 5.
+
+
+File: bltzread.info,  Node: Storage,  Next: Card and dictionary,  Prev: Skip lists,  Up: Options
+
+11.4 Storage
+============
+
+‘bltzread-state-directory’
+     Folder for the state files.
+‘bltzread-save-delay’
+     Seconds of idle time before saving.
+‘bltzread-history-limit’
+     How many finished sessions to remember.
+
+
+File: bltzread.info,  Node: Card and dictionary,  Next: Keys,  Prev: Storage,  Up: Options
+
+11.5 Card and dictionary
+========================
+
+‘bltzread-popup-trigger’
+     ‘point’ (automatic) or ‘manual’.
+‘bltzread-popup-delay’
+     How long the cursor must rest first.
+‘bltzread-popup-only-on-motion’
+     Open a card only after a command moved point onto a word.  Default
+     yes.
+‘bltzread-popup-scroll-hook’
+     Runs, with the window selected, after the card scrolled the window
+     to make room (the card is always above the word).  A package that
+     follows the window's start can use it to tell this scroll from
+     yours.
+‘bltzread-popup-gap’
+     Space between word and card in lines.  Nil means 0.75.
+‘bltzread-popup-hide-after-set’
+     Hide the card after a level change.  Default yes.
+‘bltzread-popup-style’
+     ‘auto’, ‘box’, ‘side-window’ or ‘echo’.
+‘bltzread-popup-show-gloss’
+     Show the dictionary entry in the automatic card.
+‘bltzread-popup-max-lines’, ‘bltzread-popup-lookup-max-lines’, ‘bltzread-popup-width’
+     Card size.
+‘bltzread-dictionary-function’
+     Your own lookup function.
+‘bltzread-sdcv-executable’, ‘bltzread-sdcv-dictionaries’, ‘bltzread-sdcv-data-dir’
+     The sdcv program, which dictionaries per language, and the folder
+     holding them.
+‘bltzread-sdcv-data-dir-alist’
+     A different dictionary folder for particular languages, for example
+     one holding a fixed copy of the Pāḷi dictionary.
+‘bltzread-dict-filters’
+     Short entries for the card: per dictionary (or language), which
+     pieces of the entry to show, as a regexp, a ‘:class’ plist or a
+     function.  The lookup key still shows the whole entry.  bltzread
+     ships no dictionary-specific code.  See the tutorial section _Short
+     dictionary entries_ and the docstring.
+‘bltzread-sdcv-unlisted-languages’
+     ‘none’ (default) or ‘all’: what a language missing from
+     ‘bltzread-sdcv-dictionaries’ searches.
+
+
+File: bltzread.info,  Node: Keys,  Next: Reading sessions,  Prev: Card and dictionary,  Up: Options
+
+11.6 Keys
+=========
+
+‘bltzread-prefix-key’
+     The prefix.  Default ‘s’ (the same one-letter prefix subtle uses).
+     Nil for none.
+‘bltzread-direct-keys’ and ‘bltzread-direct-key-bindings’
+     The single keys such as ‘1’ and ‘l’.  Turn them off if they clash
+     with another mode.
+‘bltzread-mouse-lookup-key’
+     Mouse gesture for lookup.
+
+
+File: bltzread.info,  Node: Reading sessions,  Next: Pasted text,  Prev: Keys,  Up: Options
+
+11.7 Reading sessions
+=====================
+
+‘bltzread-prompt-on-close’ and ‘bltzread-min-chars-for-prompt’
+     Ask to record reading when the buffer closes, but only after enough
+     text was passed.  ‘bltzread-offer-record’ asks once, whoever closes
+     the buffer.
+‘bltzread-bookmark-policy’ and ‘bltzread-bookmark-name-function’
+     Whether and how the bookmark moves.
+‘bltzread-undo-limit’
+     How many changes ‘u’ can take back.  Default 200.
+‘bltzread-range-method’, ‘bltzread-range-confirm’
+     How the range is chosen.
+‘bltzread-range-farthest-source’
+     What counts as having reached a place in ‘farthest’: ‘window-end’
+     (default), ‘point’, or a function returning a position (or nil).
+‘bltzread-range-start-function’
+     Function returning where the ‘farthest’ range begins; nil for the
+     usual start.
+
+
+File: bltzread.info,  Node: Pasted text,  Next: Colours,  Prev: Reading sessions,  Up: Options
+
+11.8 Pasted text
+================
+
+‘bltzread-paste-font-family’, ‘bltzread-paste-font-height’, ‘bltzread-paste-line-spacing’, ‘bltzread-paste-margin’
+     Look of the page made by ‘bltzread-read-text’.
+
+
+File: bltzread.info,  Node: Colours,  Prev: Pasted text,  Up: Options
+
+11.9 Colours
+============
+
+Faces: ‘bltzread-level-1’ to ‘bltzread-level-4’, ‘bltzread-ignored’,
+‘bltzread-range’, ‘bltzread-number’, and the card faces
+‘bltzread-popup’, ‘bltzread-popup-border’, ‘bltzread-popup-title’,
+‘bltzread-popup-key’, ‘bltzread-popup-dim’.
+
+
+File: bltzread.info,  Node: Using bltzread with subtle,  Next: Limits,  Prev: Options,  Up: Top
+
+12 Using bltzread with subtle
+*****************************
+
+subtle plays audio or video in mpv and shows its subtitles as text.  No
+bridge package is needed; these settings make the two compose:
+
+Setting                                                               Effect
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+‘bltzread-range-farthest-source’ ‘#'subtle-played-through-position’   Reading credit ends where playback has reached.
+‘bltzread-range-start-function’ ‘#'subtle-played-start-position’      Credit starts where the latest continuous run of playback began.  Seeking or pausing by hand does not count as
+                                                                      reading.
+‘subtle-buffer-setup-hook’                                            Turn ‘bltzread-mode’ on for track index 0 only (the track you study); the other stays plain.
+‘subtle-pause-hook’                                                   Runs when you pause by hand: start ‘bltzread-avy-unknown’.
+
+     (setq bltzread-range-farthest-source #'subtle-played-through-position
+           bltzread-range-start-function  #'subtle-played-start-position)
+
+     (add-hook 'subtle-buffer-setup-hook
+               (lambda ()
+                 (when (= subtle-track-index 0)
+                   (setq bltzread-language subtle-language) ; from movie.sl.srt
+                   (bltzread-mode 1))))
+
+     (add-hook 'subtle-pause-hook
+               (lambda () (when bltzread-mode (bltzread-avy-unknown))))
+
+   Keep ‘subtle-scroll-style’ at ‘paged’: continuous scrolling carries a
+word away while you look it up (subtle warns about it).  The first load
+of a big transcript takes a moment, because bltzr is called once for all
+its words.  subtle's ‘subtle-hold-functions’, ‘subtle-anchor-functions’
+and ‘subtle-dismiss-functions’ are set for you by subtle once bltzread is
+loaded, so a card holds the page and ‘q’ closes it first.
+
+
+File: bltzread.info,  Node: Limits,  Prev: Using bltzread with subtle,  Up: Top
+
+13 Limits
+*********
+
+   • Single words only; phrases are not tracked.
+   • Basic forms come from bltzr and are looked up again in each Emacs
+     session.
+   • Nothing is shared between languages.
+
+
+Tag Table:
+Node: Top238
+Node: What bltzread is976
+Node: The five levels1786
+Node: Starting and stopping2522
+Node: Changing a word's level3278
+Node: The word card6147
+Node: The dictionary7431
+Node: Reading sessions how words rise by themselves8754
+Node: Telling bltzread what you read9952
+Node: Pages and chapters11130
+Node: The review list11545
+Node: Your skip lists12257
+Node: Where bltzread keeps its data12847
+Node: Options13288
+Node: Language and words13657
+Node: Levels14507
+Node: Skip lists15637
+Node: Storage16518
+Node: Card and dictionary16851
+Node: Keys18908
+Node: Reading sessions19386
+Node: Pasted text20371
+Node: Colours20692
+Node: Using bltzread with subtle21069
+Node: Limits23283
+
+End Tag Table
+
+
+Local Variables:
+coding: utf-8
+Info-documentlanguage: en
+End:

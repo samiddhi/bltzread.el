@@ -1,0 +1,300 @@
+#+title: bltzread Tutorial
+#+texinfo_filename: bltzread-tutorial.info
+#+texinfo_dir_category: Emacs misc features
+#+texinfo_dir_title: bltzread-tutorial: (bltzread-tutorial)
+#+texinfo_dir_desc: Step-by-step guide to the bltzread reading mode
+#+options: toc:t num:t author:nil date:nil
+
+* Before you begin
+
+This tutorial takes you from your first coloured page to a setup that suits you. Each step says what to do and what you should see. If you want to look up what an option means, the /bltzread Reference Manual/ has all of them.
+
+You need:
+
+- Emacs with bltzread loaded (your init file already does this).
+- bltzr installed, with at least one language (check with =bltzr list-languages=).
+- Optional: sdcv and a StarDict dictionary, for the word cards.
+
+* Part 1: Your first page
+
+** Step 1. Get some text
+Open any text file in the language you are learning, or copy a paragraph and run =M-x bltzread-read-text=. The second is the easiest: it opens a nicely spaced page.
+
+** Step 2. Turn the mode on
+Run =M-x bltzread-mode=. If asked, type the three-letter language code, for example =slv=, and press Enter.
+
+You should see: after a moment, words are coloured. Strong yellow means new. Words on your skip list have no colour at all.
+
+** Step 3. Rest on a word
+Move the cursor onto a coloured word and wait half a second. A small card appears with the word, its level and, if you set up a dictionary, its meaning.
+
+** Step 4. Mark what you know
+With the cursor on a word, press =5= if you know it perfectly. The colour disappears. Press =1= to make it new again. Press =3= to say "familiar".
+
+Press =}= to jump to the next word you do not know yet. Press ={= to go back. (=s n= and =s p= do the same.) Put a count first to jump further: =C-5 }= jumps five words (=M-5 }= in a terminal).
+
+A level covers every form of the word, so =3= on /hiše/ also sets /hiša/. Made a mistake? Press =u=, or the ordinary undo key, as often as you like; redo works too.
+
+** Step 5. Ignore a name
+Put the cursor on a name and press =i=. It turns grey and bltzread will stop counting it. Press =i= again to bring it back. If a card is in your way, press =c= to close it; =d= shows the next dictionary entry when there are several.
+
+** Step 6. Look a word up properly
+Press =l= on a word, or double-click it. A longer entry appears. Looking a word up tells bltzread you did not know it: it restarts that word's progress.
+
+** Step 7. Leave a note
+Press =N=, type your own hint, press Enter. Next time the card shows it.
+
+** Step 8. Turn it off
+Run =M-x bltzread-mode= again. The colours go and the buffer is editable.
+
+** Jump to unknown words with avy
+If you have the =avy= package, run =M-x bltzread-avy-unknown=. Every unknown word on screen gets a hint; type it to go to that word and open its card. Escape or =C-g= removes the hints and continues as =avy-goto-char-timer=. Bind it to a key you like.
+
+* Part 2: Letting bltzread follow your reading
+
+Now the useful part: bltzread can raise words by itself as you read.
+
+** Step 1. Read
+Turn the mode on and read a few paragraphs. Look up the words you do not know.
+
+** Step 2. Finish the session
+Press =s f=. bltzread asks which part you read. By default it proposes everything from the start to the farthest place on screen you reached. Press Enter to accept.
+
+You should see a message saying how many words were counted. Words you did not look up now have one clean read. Do this on a few more days and they climb a level, when they have enough reads.
+
+** Step 3. Move your bookmark
+After counting, bltzread may ask whether to move the bookmark to where you stopped. Say yes to pick up there next time.
+
+** Step 4. If you read everything easily
+Press =C-u s f= to count the range and mark all words in it as known.
+
+** Step 5. Closing the buffer
+If you kill the buffer without finishing, bltzread asks whether to record your reading. Answer yes and it takes you through the same steps.
+
+** A warning about books
+In a book opened with nov.el, going to the next chapter replaces the text. Finish the session first.
+
+* Part 3: Keeping bltzr up to date
+
+When a word reaches level 5, bltzread queues it instead of changing your skip list straight away.
+
+** Step 1. Open the review list
+Run =M-x bltzread-review=. You see words and their basic forms. All are marked "add".
+
+** Step 2. Decide
+Move down with =n= and =p=. Press =d= for words you want to think about later and =r= to say "not really known": those drop back to level 4. Press =A= to mark all as add again.
+
+** Step 3. Apply
+Press =x=. Confirm. The words are added to your skip list; a =.bak= copy of the old list is kept beside it.
+
+** Step 4. Check
+Run bltzr on your text. The words you added no longer appear as new.
+
+* Part 4: Basic configuration
+
+Put settings in your init file, or use =M-x customize-group RET bltzread=.
+
+** Make progress faster or slower
+#+begin_src emacs-lisp
+(setq bltzread-promotion-thresholds '(2 2 3 4))
+#+end_src
+The four numbers are clean reads needed to leave level 1, 2, 3 and 4.
+
+** Change what a lookup does
+#+begin_src emacs-lisp
+(setq bltzread-lookup-effect 'demote)
+#+end_src
+A word you look up now also goes down one level.
+
+** Turn off single-key shortcuts
+If the digit keys clash with another mode:
+#+begin_src emacs-lisp
+(setq bltzread-direct-keys nil)
+#+end_src
+You still have =s 3= and the rest. The prefix is =bltzread-prefix-key= (default =s=).
+
+** Colours
+Run =M-x customize-face RET bltzread-level-1 RET=. Change the background. Do the same for the others.
+
+** Dictionaries
+Tell bltzread where your StarDict folders are, and which to use for each language:
+#+begin_src emacs-lisp
+(setq bltzread-sdcv-data-dir "~/archive/_goldendict")
+(setq bltzread-sdcv-dictionaries
+      '(("slv" "DSSJ-E-sl-en")
+        ("pli" "dpd")))
+#+end_src
+A name may be the exact one shown by =sdcv -l -2 ~/archive/_goldendict=, the folder name, or a unique part of the name. Inside =use-package :custom= write each pair as =(bltzread-sdcv-dictionaries '(...))=, not =(setq ...)=. Languages not listed search no dictionary. If lookups return nothing, run =M-x bltzread-dict-diagnose=.
+
+** The pasted-text page
+#+begin_src emacs-lisp
+(setq bltzread-paste-font-family "Georgia"
+      bltzread-paste-font-height 1.5
+      bltzread-paste-line-spacing 0.5
+      bltzread-paste-margin 12)
+#+end_src
+
+* Part 5: Choosing how you mark what you read
+
+Four methods exist; you will like one more than the others.
+
+** Step 1. Try them
+Run =M-x bltzread-range-playground=. It gives you some text and lets you try each method, then shows the range it chose.
+
+** Step 2. Pick one
+#+begin_src emacs-lisp
+(setq bltzread-range-method 'paragraphs)
+#+end_src
+Choices: =farthest=, =points=, =paragraphs=, =lines=. You can switch during reading with =s m=.
+
+** Step 3. Skip the confirmation
+#+begin_src emacs-lisp
+(setq bltzread-range-confirm nil)
+#+end_src
+
+* Part 6: Advanced options
+
+** One level for all forms of a word
+By default each spelling has its own level. To give a basic word and all its forms one level:
+#+begin_src emacs-lisp
+(setq bltzread-track-by 'lemma)
+#+end_src
+This pairs well with writing to the word-families list:
+#+begin_src emacs-lisp
+(setq bltzread-list-target 'word-families)
+#+end_src
+
+** Different list target per language
+#+begin_src emacs-lisp
+(setq bltzread-list-target 'exact-words
+      bltzread-list-target-alist '(("pli" . word-families)))
+#+end_src
+
+** Skip the review
+#+begin_src emacs-lisp
+(setq bltzread-known-write-policy 'immediate)
+#+end_src
+Words reaching level 5 are written at once. Careful: you can no longer reject them. The default is =unset=: it queues words like =review= and warns once per session that you have not chosen. Choose =review= or =immediate= and the warning goes away.
+
+** Your own skip list files
+#+begin_src emacs-lisp
+(setq bltzread-skip-exact-words-files
+      '(("slv" . "~/lists/slv-words.txt")))
+#+end_src
+Otherwise bltzread reads the paths from your bltzr settings file.
+
+** Your own dictionary
+Any function that takes a language and a list of words and returns text:
+#+begin_src emacs-lisp
+(defun my-lookup (lang words)
+  (shell-command-to-string
+   (format "mydict %s %s" lang (car words))))
+(setq bltzread-dictionary-function #'my-lookup)
+#+end_src
+
+** A language that has no spaces
+Give it its own word pattern:
+#+begin_src emacs-lisp
+(setq bltzread-word-regexp-alist '(("xyz" . "[[:word:]]+")))
+#+end_src
+
+** Count repeated words
+#+begin_src emacs-lisp
+(setq bltzread-count-each-occurrence t)
+#+end_src
+A word seen five times in the range gets five clean reads.
+
+** The card
+#+begin_src emacs-lisp
+(setq bltzread-popup-trigger 'manual     ; only when you press s .
+      bltzread-popup-style 'side-window  ; never a floating box
+      bltzread-popup-max-lines 12)
+#+end_src
+
+** Per-file language
+Put this at the end of a file so bltzread knows its language:
+#+begin_example
+# Local Variables:
+# bltzread-language: "slv"
+# End:
+#+end_example
+
+* Part 7: Reading along with subtle
+
+If you play audio or video with subtle, bltzread can credit only what was played. Put this in your init file:
+#+begin_src emacs-lisp
+(setq bltzread-range-farthest-source #'subtle-played-through-position
+      bltzread-range-start-function  #'subtle-played-start-position)
+
+(add-hook 'subtle-buffer-setup-hook
+          (lambda ()
+            (when (= subtle-track-index 0)
+              (setq bltzread-language subtle-language)
+              (bltzread-mode 1))))
+
+(add-hook 'subtle-pause-hook
+          (lambda () (when bltzread-mode (bltzread-avy-unknown))))
+#+end_src
+Now bltzread is on for the first subtitle file only. Press =p= to pause and the unknown words in view get avy hints; pick one to see its card. In a subtitle buffer the same single keys work (=1=-=5=, =l=, =}=, ={=); subtle keeps =p f b F B ] [ = ) ( RET r h ? q= and the prefix =s=. The first load of a long transcript takes a moment while bltzr reads all its words. See the reference manual for the details.
+
+* Short dictionary entries
+
+The card that appears when you rest on a word shows only the part of a dictionary entry you care about, for example the English translations. The lookup key shows the whole entry. bltzread knows nothing about any particular dictionary: you tell it, per dictionary, which pieces of the entry to show. This takes a line or two each.
+
+** Step 1. Look at the raw entry
+An entry is HTML. Print it with sdcv (=-u= takes the dictionary name from =sdcv -l -2 ~/archive/_goldendict=):
+#+begin_src sh
+sdcv -n -j -e -0 -1 -2 ~/archive/_goldendict -u "Polish-English" dom
+#+end_src
+The output is JSON; the entry is in the field =definition=. Read it for the pieces you want. In the Polish-English entry the translations look like this:
+#+begin_example
+<span class="trg"><span class="trans">building </span></span>
+#+end_example
+In the Slovene one the translations are all in one paragraph, separated by middle dots:
+#+begin_example
+<p class="gloss">house · household, family</p>
+#+end_example
+In the Pali one the meaning is the first bold text:
+#+begin_example
+<div class=dpd><p>masc. <b>nature; character</b>
+#+end_example
+
+
+** Step 2. Write a spec
+In =bltzread-dict-filters= each dictionary gets a spec. The key is the dictionary name or the language code. A spec is one of:
+
+- A regexp string. Every match in the HTML gives one line: the text of its first group (or the whole match). For the Polish entry, this regexp means "the text right after class="trans">":
+  #+begin_src emacs-lisp
+  "class=\"trans\">\\([^<]*\\)"
+  #+end_src
+- =(:class "gloss")=: the text just after each element with that class. Shorter than a regexp when the class is all you need. Give a list for several classes.
+- Extra keys for a list spec: =:split " · "= cuts each piece into separate lines, =:max 5= keeps the first five lines, =:join ", "= puts the lines on one line.
+- A function taking the HTML, for anything else.
+
+Tags and entities are removed, repeated lines dropped. Do not include the headword or the dictionary name: the card shows the word already.
+
+** Step 3. My five dictionaries
+#+begin_src emacs-lisp
+(setq bltzread-dict-filters
+      '(("slv" :class "gloss" :split " · ")               ; DSSJ-E-sl-en
+        ("pli" . "<div class=dpd><p>[^<]*<b>\\([^<]*\\)") ; dpd
+        ("pol" . "class=\"trans\">\\([^<]*\\)")         ; Polish-English
+        ("hrv" . "class=\"trans\">\\([^<]*\\)")         ; Croatian-English
+        ("eng" :class "df" :max 5)))                      ; new-oxford-american-dictionary
+#+end_src
+Remember that inside a Lisp string every backslash is doubled.
+
+** Step 4. Test it
+Evaluate the =setq=, then rest on a word. If the card still shows the whole entry, your spec found nothing (bltzread then falls back to the full entry on purpose). Try the spec on its own with =M-x eval-expression=:
+#+begin_src emacs-lisp
+(bltzread-dict-apply-filter '(:class "gloss" :split " · ")
+  "<p class=\"gloss\">house · family</p>")
+#+end_src
+This returns ="house\nfamily"=. Lookups are cached with the entry; run =M-x bltzread-dict-clear-cache= after changing a spec.
+
+* If something goes wrong
+
+- No colours :: Check =bltzr list-languages= and that the language code is right.
+- No dictionary text :: Run =sdcv -l -2 YOUR-FOLDER= in a terminal and compare names with =bltzread-sdcv-dictionaries=.
+- Keys do nothing :: Another mode may have taken them. Use the =s= prefix, or set =bltzread-direct-keys= to nil.
+- Words keep returning to level 1 :: You may be looking them up; each lookup restarts their count.

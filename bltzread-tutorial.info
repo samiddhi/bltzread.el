@@ -1,0 +1,791 @@
+This is bltzread-tutorial.info, produced by makeinfo version 7.2 from
+bltzread-tutorial.texi.
+
+INFO-DIR-SECTION Emacs misc features
+START-INFO-DIR-ENTRY
+* bltzread-tutorial: (bltzread-tutorial). Step-by-step guide to the bltzread reading mode.
+END-INFO-DIR-ENTRY
+
+
+File: bltzread-tutorial.info,  Node: Top,  Next: Before you begin,  Up: (dir)
+
+bltzread Tutorial
+*****************
+
+* Menu:
+
+* Before you begin::
+* Part 1 Your first page::
+* Part 2 Letting bltzread follow your reading::
+* Part 3 Keeping bltzr up to date::
+* Part 4 Basic configuration::
+* Part 5 Choosing how you mark what you read::
+* Part 6 Advanced options::
+* Part 7 Reading along with subtle::
+* Short dictionary entries::
+* If something goes wrong::
+
+-- The Detailed Node Listing --
+
+Part 1: Your first page
+
+* Step 1. Get some text: Step 1 Get some text.
+* Step 2. Turn the mode on: Step 2 Turn the mode on.
+* Step 3. Rest on a word: Step 3 Rest on a word.
+* Step 4. Mark what you know: Step 4 Mark what you know.
+* Step 5. Ignore a name: Step 5 Ignore a name.
+* Step 6. Look a word up properly: Step 6 Look a word up properly.
+* Step 7. Leave a note: Step 7 Leave a note.
+* Step 8. Turn it off: Step 8 Turn it off.
+* Jump to unknown words with avy::
+
+Part 2: Letting bltzread follow your reading
+
+* Step 1. Read: Step 1 Read.
+* Step 2. Finish the session: Step 2 Finish the session.
+* Step 3. Move your bookmark: Step 3 Move your bookmark.
+* Step 4. If you read everything easily: Step 4 If you read everything easily.
+* Step 5. Closing the buffer: Step 5 Closing the buffer.
+* A warning about books::
+
+Part 3: Keeping bltzr up to date
+
+* Step 1. Open the review list: Step 1 Open the review list.
+* Step 2. Decide: Step 2 Decide.
+* Step 3. Apply: Step 3 Apply.
+* Step 4. Check: Step 4 Check.
+
+Part 4: Basic configuration
+
+* Make progress faster or slower::
+* Change what a lookup does::
+* Turn off single-key shortcuts::
+* Colours::
+* Dictionaries::
+* The pasted-text page::
+
+Part 5: Choosing how you mark what you read
+
+* Step 1. Try them: Step 1 Try them.
+* Step 2. Pick one: Step 2 Pick one.
+* Step 3. Skip the confirmation: Step 3 Skip the confirmation.
+
+Part 6: Advanced options
+
+* One level for all forms of a word::
+* Different list target per language::
+* Skip the review::
+* Your own skip list files::
+* Your own dictionary::
+* A language that has no spaces::
+* Count repeated words::
+* The card::
+* Per-file language::
+
+Short dictionary entries
+
+* Step 1. Look at the raw entry: Step 1 Look at the raw entry.
+* Step 2. Write a spec: Step 2 Write a spec.
+* Step 3. My five dictionaries: Step 3 My five dictionaries.
+* Step 4. Test it: Step 4 Test it.
+
+
+File: bltzread-tutorial.info,  Node: Before you begin,  Next: Part 1 Your first page,  Prev: Top,  Up: Top
+
+1 Before you begin
+******************
+
+This tutorial takes you from your first coloured page to a setup that
+suits you.  Each step says what to do and what you should see.  If you
+want to look up what an option means, the _bltzread Reference Manual_
+has all of them.
+
+   You need:
+
+   • Emacs with bltzread loaded (your init file already does this).
+   • bltzr installed, with at least one language (check with ‘bltzr
+     list-languages’).
+   • Optional: sdcv and a StarDict dictionary, for the word cards.
+
+
+File: bltzread-tutorial.info,  Node: Part 1 Your first page,  Next: Part 2 Letting bltzread follow your reading,  Prev: Before you begin,  Up: Top
+
+2 Part 1: Your first page
+*************************
+
+* Menu:
+
+* Step 1. Get some text: Step 1 Get some text.
+* Step 2. Turn the mode on: Step 2 Turn the mode on.
+* Step 3. Rest on a word: Step 3 Rest on a word.
+* Step 4. Mark what you know: Step 4 Mark what you know.
+* Step 5. Ignore a name: Step 5 Ignore a name.
+* Step 6. Look a word up properly: Step 6 Look a word up properly.
+* Step 7. Leave a note: Step 7 Leave a note.
+* Step 8. Turn it off: Step 8 Turn it off.
+* Jump to unknown words with avy::
+
+
+File: bltzread-tutorial.info,  Node: Step 1 Get some text,  Next: Step 2 Turn the mode on,  Up: Part 1 Your first page
+
+2.1 Step 1. Get some text
+=========================
+
+Open any text file in the language you are learning, or copy a paragraph
+and run ‘M-x bltzread-read-text’.  The second is the easiest: it opens a
+nicely spaced page.
+
+
+File: bltzread-tutorial.info,  Node: Step 2 Turn the mode on,  Next: Step 3 Rest on a word,  Prev: Step 1 Get some text,  Up: Part 1 Your first page
+
+2.2 Step 2. Turn the mode on
+============================
+
+Run ‘M-x bltzread-mode’.  If asked, type the three-letter language code,
+for example ‘slv’, and press Enter.
+
+   You should see: after a moment, words are coloured.  Strong yellow
+means new.  Words on your skip list have no colour at all.
+
+
+File: bltzread-tutorial.info,  Node: Step 3 Rest on a word,  Next: Step 4 Mark what you know,  Prev: Step 2 Turn the mode on,  Up: Part 1 Your first page
+
+2.3 Step 3. Rest on a word
+==========================
+
+Move the cursor onto a coloured word and wait half a second.  A small
+card appears with the word, its level and, if you set up a dictionary,
+its meaning.
+
+
+File: bltzread-tutorial.info,  Node: Step 4 Mark what you know,  Next: Step 5 Ignore a name,  Prev: Step 3 Rest on a word,  Up: Part 1 Your first page
+
+2.4 Step 4. Mark what you know
+==============================
+
+With the cursor on a word, press ‘5’ if you know it perfectly.  The
+colour disappears.  Press ‘1’ to make it new again.  Press ‘3’ to say
+"familiar".
+
+   Press ‘}’ to jump to the next word you do not know yet.  Press ‘{’ to
+go back.  (‘s n’ and ‘s p’ do the same.)  Put a count first to jump
+further: ‘C-5 }’ jumps five words (‘M-5 }’ in a terminal).
+
+   A level covers every form of the word, so ‘3’ on _hiše_ also sets
+_hiša_.  Made a mistake?  Press ‘u’, or the ordinary undo key, as often
+as you like; redo works too.
+
+
+File: bltzread-tutorial.info,  Node: Step 5 Ignore a name,  Next: Step 6 Look a word up properly,  Prev: Step 4 Mark what you know,  Up: Part 1 Your first page
+
+2.5 Step 5. Ignore a name
+=========================
+
+Put the cursor on a name and press ‘i’.  It turns grey and bltzread will
+stop counting it.  Press ‘i’ again to bring it back.  If a card is in
+your way, press ‘c’ to close it; ‘d’ shows the next dictionary entry
+when there are several.
+
+
+File: bltzread-tutorial.info,  Node: Step 6 Look a word up properly,  Next: Step 7 Leave a note,  Prev: Step 5 Ignore a name,  Up: Part 1 Your first page
+
+2.6 Step 6. Look a word up properly
+===================================
+
+Press ‘l’ on a word, or double-click it.  A longer entry appears.
+Looking a word up tells bltzread you did not know it: it restarts that
+word's progress.
+
+
+File: bltzread-tutorial.info,  Node: Step 7 Leave a note,  Next: Step 8 Turn it off,  Prev: Step 6 Look a word up properly,  Up: Part 1 Your first page
+
+2.7 Step 7. Leave a note
+========================
+
+Press ‘N’, type your own hint, press Enter.  Next time the card shows
+it.
+
+
+File: bltzread-tutorial.info,  Node: Step 8 Turn it off,  Next: Jump to unknown words with avy,  Prev: Step 7 Leave a note,  Up: Part 1 Your first page
+
+2.8 Step 8. Turn it off
+=======================
+
+Run ‘M-x bltzread-mode’ again.  The colours go and the buffer is
+editable.
+
+
+File: bltzread-tutorial.info,  Node: Jump to unknown words with avy,  Prev: Step 8 Turn it off,  Up: Part 1 Your first page
+
+2.9 Jump to unknown words with avy
+==================================
+
+If you have the ‘avy’ package, run ‘M-x bltzread-avy-unknown’.  Every
+unknown word on screen gets a hint; type it to go to that word and open
+its card.  Escape or ‘C-g’ removes the hints and continues as
+‘avy-goto-char-timer’.  Bind it to a key you like.
+
+
+File: bltzread-tutorial.info,  Node: Part 2 Letting bltzread follow your reading,  Next: Part 3 Keeping bltzr up to date,  Prev: Part 1 Your first page,  Up: Top
+
+3 Part 2: Letting bltzread follow your reading
+**********************************************
+
+Now the useful part: bltzread can raise words by itself as you read.
+
+* Menu:
+
+* Step 1. Read: Step 1 Read.
+* Step 2. Finish the session: Step 2 Finish the session.
+* Step 3. Move your bookmark: Step 3 Move your bookmark.
+* Step 4. If you read everything easily: Step 4 If you read everything easily.
+* Step 5. Closing the buffer: Step 5 Closing the buffer.
+* A warning about books::
+
+
+File: bltzread-tutorial.info,  Node: Step 1 Read,  Next: Step 2 Finish the session,  Up: Part 2 Letting bltzread follow your reading
+
+3.1 Step 1. Read
+================
+
+Turn the mode on and read a few paragraphs.  Look up the words you do
+not know.
+
+
+File: bltzread-tutorial.info,  Node: Step 2 Finish the session,  Next: Step 3 Move your bookmark,  Prev: Step 1 Read,  Up: Part 2 Letting bltzread follow your reading
+
+3.2 Step 2. Finish the session
+==============================
+
+Press ‘s f’.  bltzread asks which part you read.  By default it proposes
+everything from the start to the farthest place on screen you reached.
+Press Enter to accept.
+
+   You should see a message saying how many words were counted.  Words
+you did not look up now have one clean read.  Do this on a few more days
+and they climb a level, when they have enough reads.
+
+
+File: bltzread-tutorial.info,  Node: Step 3 Move your bookmark,  Next: Step 4 If you read everything easily,  Prev: Step 2 Finish the session,  Up: Part 2 Letting bltzread follow your reading
+
+3.3 Step 3. Move your bookmark
+==============================
+
+After counting, bltzread may ask whether to move the bookmark to where
+you stopped.  Say yes to pick up there next time.
+
+
+File: bltzread-tutorial.info,  Node: Step 4 If you read everything easily,  Next: Step 5 Closing the buffer,  Prev: Step 3 Move your bookmark,  Up: Part 2 Letting bltzread follow your reading
+
+3.4 Step 4. If you read everything easily
+=========================================
+
+Press ‘C-u s f’ to count the range and mark all words in it as known.
+
+
+File: bltzread-tutorial.info,  Node: Step 5 Closing the buffer,  Next: A warning about books,  Prev: Step 4 If you read everything easily,  Up: Part 2 Letting bltzread follow your reading
+
+3.5 Step 5. Closing the buffer
+==============================
+
+If you kill the buffer without finishing, bltzread asks whether to
+record your reading.  Answer yes and it takes you through the same
+steps.
+
+
+File: bltzread-tutorial.info,  Node: A warning about books,  Prev: Step 5 Closing the buffer,  Up: Part 2 Letting bltzread follow your reading
+
+3.6 A warning about books
+=========================
+
+In a book opened with nov.el, going to the next chapter replaces the
+text.  Finish the session first.
+
+
+File: bltzread-tutorial.info,  Node: Part 3 Keeping bltzr up to date,  Next: Part 4 Basic configuration,  Prev: Part 2 Letting bltzread follow your reading,  Up: Top
+
+4 Part 3: Keeping bltzr up to date
+**********************************
+
+When a word reaches level 5, bltzread queues it instead of changing your
+skip list straight away.
+
+* Menu:
+
+* Step 1. Open the review list: Step 1 Open the review list.
+* Step 2. Decide: Step 2 Decide.
+* Step 3. Apply: Step 3 Apply.
+* Step 4. Check: Step 4 Check.
+
+
+File: bltzread-tutorial.info,  Node: Step 1 Open the review list,  Next: Step 2 Decide,  Up: Part 3 Keeping bltzr up to date
+
+4.1 Step 1. Open the review list
+================================
+
+Run ‘M-x bltzread-review’.  You see words and their basic forms.  All
+are marked "add".
+
+
+File: bltzread-tutorial.info,  Node: Step 2 Decide,  Next: Step 3 Apply,  Prev: Step 1 Open the review list,  Up: Part 3 Keeping bltzr up to date
+
+4.2 Step 2. Decide
+==================
+
+Move down with ‘n’ and ‘p’.  Press ‘d’ for words you want to think about
+later and ‘r’ to say "not really known": those drop back to level 4.
+Press ‘A’ to mark all as add again.
+
+
+File: bltzread-tutorial.info,  Node: Step 3 Apply,  Next: Step 4 Check,  Prev: Step 2 Decide,  Up: Part 3 Keeping bltzr up to date
+
+4.3 Step 3. Apply
+=================
+
+Press ‘x’.  Confirm.  The words are added to your skip list; a ‘.bak’
+copy of the old list is kept beside it.
+
+
+File: bltzread-tutorial.info,  Node: Step 4 Check,  Prev: Step 3 Apply,  Up: Part 3 Keeping bltzr up to date
+
+4.4 Step 4. Check
+=================
+
+Run bltzr on your text.  The words you added no longer appear as new.
+
+
+File: bltzread-tutorial.info,  Node: Part 4 Basic configuration,  Next: Part 5 Choosing how you mark what you read,  Prev: Part 3 Keeping bltzr up to date,  Up: Top
+
+5 Part 4: Basic configuration
+*****************************
+
+Put settings in your init file, or use ‘M-x customize-group RET
+bltzread’.
+
+* Menu:
+
+* Make progress faster or slower::
+* Change what a lookup does::
+* Turn off single-key shortcuts::
+* Colours::
+* Dictionaries::
+* The pasted-text page::
+
+
+File: bltzread-tutorial.info,  Node: Make progress faster or slower,  Next: Change what a lookup does,  Up: Part 4 Basic configuration
+
+5.1 Make progress faster or slower
+==================================
+
+     (setq bltzread-promotion-thresholds '(2 2 3 4))
+   The four numbers are clean reads needed to leave level 1, 2, 3 and 4.
+
+
+File: bltzread-tutorial.info,  Node: Change what a lookup does,  Next: Turn off single-key shortcuts,  Prev: Make progress faster or slower,  Up: Part 4 Basic configuration
+
+5.2 Change what a lookup does
+=============================
+
+     (setq bltzread-lookup-effect 'demote)
+   A word you look up now also goes down one level.
+
+
+File: bltzread-tutorial.info,  Node: Turn off single-key shortcuts,  Next: Colours,  Prev: Change what a lookup does,  Up: Part 4 Basic configuration
+
+5.3 Turn off single-key shortcuts
+=================================
+
+If the digit keys clash with another mode:
+     (setq bltzread-direct-keys nil)
+   You still have ‘s 3’ and the rest.  The prefix is
+‘bltzread-prefix-key’ (default ‘s’).
+
+
+File: bltzread-tutorial.info,  Node: Colours,  Next: Dictionaries,  Prev: Turn off single-key shortcuts,  Up: Part 4 Basic configuration
+
+5.4 Colours
+===========
+
+Run ‘M-x customize-face RET bltzread-level-1 RET’.  Change the
+background.  Do the same for the others.
+
+
+File: bltzread-tutorial.info,  Node: Dictionaries,  Next: The pasted-text page,  Prev: Colours,  Up: Part 4 Basic configuration
+
+5.5 Dictionaries
+================
+
+Tell bltzread where your StarDict folders are, and which to use for each
+language:
+     (setq bltzread-sdcv-data-dir "~/archive/_goldendict")
+     (setq bltzread-sdcv-dictionaries
+           '(("slv" "DSSJ-E-sl-en")
+             ("pli" "dpd")))
+   A name may be the exact one shown by ‘sdcv -l -2
+~/archive/_goldendict’, the folder name, or a unique part of the name.
+Inside ‘use-package :custom’ write each pair as
+‘(bltzread-sdcv-dictionaries '(...))’, not ‘(setq ...)’.  Languages not
+listed search no dictionary.  If lookups return nothing, run ‘M-x
+bltzread-dict-diagnose’.
+
+
+File: bltzread-tutorial.info,  Node: The pasted-text page,  Prev: Dictionaries,  Up: Part 4 Basic configuration
+
+5.6 The pasted-text page
+========================
+
+     (setq bltzread-paste-font-family "Georgia"
+           bltzread-paste-font-height 1.5
+           bltzread-paste-line-spacing 0.5
+           bltzread-paste-margin 12)
+
+
+File: bltzread-tutorial.info,  Node: Part 5 Choosing how you mark what you read,  Next: Part 6 Advanced options,  Prev: Part 4 Basic configuration,  Up: Top
+
+6 Part 5: Choosing how you mark what you read
+*********************************************
+
+Four methods exist; you will like one more than the others.
+
+* Menu:
+
+* Step 1. Try them: Step 1 Try them.
+* Step 2. Pick one: Step 2 Pick one.
+* Step 3. Skip the confirmation: Step 3 Skip the confirmation.
+
+
+File: bltzread-tutorial.info,  Node: Step 1 Try them,  Next: Step 2 Pick one,  Up: Part 5 Choosing how you mark what you read
+
+6.1 Step 1. Try them
+====================
+
+Run ‘M-x bltzread-range-playground’.  It gives you some text and lets
+you try each method, then shows the range it chose.
+
+
+File: bltzread-tutorial.info,  Node: Step 2 Pick one,  Next: Step 3 Skip the confirmation,  Prev: Step 1 Try them,  Up: Part 5 Choosing how you mark what you read
+
+6.2 Step 2. Pick one
+====================
+
+     (setq bltzread-range-method 'paragraphs)
+   Choices: ‘farthest’, ‘points’, ‘paragraphs’, ‘lines’.  You can switch
+during reading with ‘s m’.
+
+
+File: bltzread-tutorial.info,  Node: Step 3 Skip the confirmation,  Prev: Step 2 Pick one,  Up: Part 5 Choosing how you mark what you read
+
+6.3 Step 3. Skip the confirmation
+=================================
+
+     (setq bltzread-range-confirm nil)
+
+
+File: bltzread-tutorial.info,  Node: Part 6 Advanced options,  Next: Part 7 Reading along with subtle,  Prev: Part 5 Choosing how you mark what you read,  Up: Top
+
+7 Part 6: Advanced options
+**************************
+
+* Menu:
+
+* One level for all forms of a word::
+* Different list target per language::
+* Skip the review::
+* Your own skip list files::
+* Your own dictionary::
+* A language that has no spaces::
+* Count repeated words::
+* The card::
+* Per-file language::
+
+
+File: bltzread-tutorial.info,  Node: One level for all forms of a word,  Next: Different list target per language,  Up: Part 6 Advanced options
+
+7.1 One level for all forms of a word
+=====================================
+
+By default each spelling has its own level.  To give a basic word and
+all its forms one level:
+     (setq bltzread-track-by 'lemma)
+   This pairs well with writing to the word-families list:
+     (setq bltzread-list-target 'word-families)
+
+
+File: bltzread-tutorial.info,  Node: Different list target per language,  Next: Skip the review,  Prev: One level for all forms of a word,  Up: Part 6 Advanced options
+
+7.2 Different list target per language
+======================================
+
+     (setq bltzread-list-target 'exact-words
+           bltzread-list-target-alist '(("pli" . word-families)))
+
+
+File: bltzread-tutorial.info,  Node: Skip the review,  Next: Your own skip list files,  Prev: Different list target per language,  Up: Part 6 Advanced options
+
+7.3 Skip the review
+===================
+
+     (setq bltzread-known-write-policy 'immediate)
+   Words reaching level 5 are written at once.  Careful: you can no
+longer reject them.  The default is ‘unset’: it queues words like
+‘review’ and warns once per session that you have not chosen.  Choose
+‘review’ or ‘immediate’ and the warning goes away.
+
+
+File: bltzread-tutorial.info,  Node: Your own skip list files,  Next: Your own dictionary,  Prev: Skip the review,  Up: Part 6 Advanced options
+
+7.4 Your own skip list files
+============================
+
+     (setq bltzread-skip-exact-words-files
+           '(("slv" . "~/lists/slv-words.txt")))
+   Otherwise bltzread reads the paths from your bltzr settings file.
+
+
+File: bltzread-tutorial.info,  Node: Your own dictionary,  Next: A language that has no spaces,  Prev: Your own skip list files,  Up: Part 6 Advanced options
+
+7.5 Your own dictionary
+=======================
+
+Any function that takes a language and a list of words and returns text:
+     (defun my-lookup (lang words)
+       (shell-command-to-string
+        (format "mydict %s %s" lang (car words))))
+     (setq bltzread-dictionary-function #'my-lookup)
+
+
+File: bltzread-tutorial.info,  Node: A language that has no spaces,  Next: Count repeated words,  Prev: Your own dictionary,  Up: Part 6 Advanced options
+
+7.6 A language that has no spaces
+=================================
+
+Give it its own word pattern:
+     (setq bltzread-word-regexp-alist '(("xyz" . "[[:word:]]+")))
+
+
+File: bltzread-tutorial.info,  Node: Count repeated words,  Next: The card,  Prev: A language that has no spaces,  Up: Part 6 Advanced options
+
+7.7 Count repeated words
+========================
+
+     (setq bltzread-count-each-occurrence t)
+   A word seen five times in the range gets five clean reads.
+
+
+File: bltzread-tutorial.info,  Node: The card,  Next: Per-file language,  Prev: Count repeated words,  Up: Part 6 Advanced options
+
+7.8 The card
+============
+
+     (setq bltzread-popup-trigger 'manual     ; only when you press s .
+           bltzread-popup-style 'side-window  ; never a floating box
+           bltzread-popup-max-lines 12)
+
+
+File: bltzread-tutorial.info,  Node: Per-file language,  Prev: The card,  Up: Part 6 Advanced options
+
+7.9 Per-file language
+=====================
+
+Put this at the end of a file so bltzread knows its language:
+     # Local Variables:
+     # bltzread-language: "slv"
+     # End:
+
+
+File: bltzread-tutorial.info,  Node: Part 7 Reading along with subtle,  Next: Short dictionary entries,  Prev: Part 6 Advanced options,  Up: Top
+
+8 Part 7: Reading along with subtle
+***********************************
+
+If you play audio or video with subtle, bltzread can credit only what
+was played.  Put this in your init file:
+     (setq bltzread-range-farthest-source #'subtle-played-through-position
+           bltzread-range-start-function  #'subtle-played-start-position)
+
+     (add-hook 'subtle-buffer-setup-hook
+               (lambda ()
+                 (when (= subtle-track-index 0)
+                   (setq bltzread-language subtle-language)
+                   (bltzread-mode 1))))
+
+     (add-hook 'subtle-pause-hook
+               (lambda () (when bltzread-mode (bltzread-avy-unknown))))
+   Now bltzread is on for the first subtitle file only.  Press ‘p’ to
+pause and the unknown words in view get avy hints; pick one to see its
+card.  In a subtitle buffer the same single keys work (‘1’-‘5’, ‘l’,
+‘}’, ‘{’); subtle keeps ‘p f b F B ] [ = ) ( RET r h ? q’ and the prefix
+‘s’.  The first load of a long transcript takes a moment while bltzr
+reads all its words.  See the reference manual for the details.
+
+
+File: bltzread-tutorial.info,  Node: Short dictionary entries,  Next: If something goes wrong,  Prev: Part 7 Reading along with subtle,  Up: Top
+
+9 Short dictionary entries
+**************************
+
+The card that appears when you rest on a word shows only the part of a
+dictionary entry you care about, for example the English translations.
+The lookup key shows the whole entry.  bltzread knows nothing about any
+particular dictionary: you tell it, per dictionary, which pieces of the
+entry to show.  This takes a line or two each.
+
+* Menu:
+
+* Step 1. Look at the raw entry: Step 1 Look at the raw entry.
+* Step 2. Write a spec: Step 2 Write a spec.
+* Step 3. My five dictionaries: Step 3 My five dictionaries.
+* Step 4. Test it: Step 4 Test it.
+
+
+File: bltzread-tutorial.info,  Node: Step 1 Look at the raw entry,  Next: Step 2 Write a spec,  Up: Short dictionary entries
+
+9.1 Step 1. Look at the raw entry
+=================================
+
+An entry is HTML.  Print it with sdcv (‘-u’ takes the dictionary name
+from ‘sdcv -l -2 ~/archive/_goldendict’):
+     sdcv -n -j -e -0 -1 -2 ~/archive/_goldendict -u "Polish-English" dom
+   The output is JSON; the entry is in the field ‘definition’.  Read it
+for the pieces you want.  In the Polish-English entry the translations
+look like this:
+     <span class="trg"><span class="trans">building </span></span>
+   In the Slovene one the translations are all in one paragraph,
+separated by middle dots:
+     <p class="gloss">house · household, family</p>
+   In the Pali one the meaning is the first bold text:
+     <div class=dpd><p>masc. <b>nature; character</b>
+
+
+File: bltzread-tutorial.info,  Node: Step 2 Write a spec,  Next: Step 3 My five dictionaries,  Prev: Step 1 Look at the raw entry,  Up: Short dictionary entries
+
+9.2 Step 2. Write a spec
+========================
+
+In ‘bltzread-dict-filters’ each dictionary gets a spec.  The key is the
+dictionary name or the language code.  A spec is one of:
+
+   • A regexp string.  Every match in the HTML gives one line: the text
+     of its first group (or the whole match).  For the Polish entry,
+     this regexp means "the text right after class="trans">":
+          "class=\"trans\">\\([^<]*\\)"
+   • ‘(:class "gloss")’: the text just after each element with that
+     class.  Shorter than a regexp when the class is all you need.  Give
+     a list for several classes.
+   • Extra keys for a list spec: ‘:split " · "’ cuts each piece into
+     separate lines, ‘:max 5’ keeps the first five lines, ‘:join ", "’
+     puts the lines on one line.
+   • A function taking the HTML, for anything else.
+
+   Tags and entities are removed, repeated lines dropped.  Do not
+include the headword or the dictionary name: the card shows the word
+already.
+
+
+File: bltzread-tutorial.info,  Node: Step 3 My five dictionaries,  Next: Step 4 Test it,  Prev: Step 2 Write a spec,  Up: Short dictionary entries
+
+9.3 Step 3. My five dictionaries
+================================
+
+     (setq bltzread-dict-filters
+           '(("slv" :class "gloss" :split " · ")               ; DSSJ-E-sl-en
+             ("pli" . "<div class=dpd><p>[^<]*<b>\\([^<]*\\)") ; dpd
+             ("pol" . "class=\"trans\">\\([^<]*\\)")         ; Polish-English
+             ("hrv" . "class=\"trans\">\\([^<]*\\)")         ; Croatian-English
+             ("eng" :class "df" :max 5)))                      ; new-oxford-american-dictionary
+   Remember that inside a Lisp string every backslash is doubled.
+
+
+File: bltzread-tutorial.info,  Node: Step 4 Test it,  Prev: Step 3 My five dictionaries,  Up: Short dictionary entries
+
+9.4 Step 4. Test it
+===================
+
+Evaluate the ‘setq’, then rest on a word.  If the card still shows the
+whole entry, your spec found nothing (bltzread then falls back to the
+full entry on purpose).  Try the spec on its own with ‘M-x
+eval-expression’:
+     (bltzread-dict-apply-filter '(:class "gloss" :split " · ")
+       "<p class=\"gloss\">house · family</p>")
+   This returns ‘"house\nfamily"’.  Lookups are cached with the entry;
+run ‘M-x bltzread-dict-clear-cache’ after changing a spec.
+
+
+File: bltzread-tutorial.info,  Node: If something goes wrong,  Prev: Short dictionary entries,  Up: Top
+
+10 If something goes wrong
+**************************
+
+No colours
+     Check ‘bltzr list-languages’ and that the language code is right.
+No dictionary text
+     Run ‘sdcv -l -2 YOUR-FOLDER’ in a terminal and compare names with
+     ‘bltzread-sdcv-dictionaries’.
+Keys do nothing
+     Another mode may have taken them.  Use the ‘s’ prefix, or set
+     ‘bltzread-direct-keys’ to nil.
+Words keep returning to level 1
+     You may be looking them up; each lookup restarts their count.
+
+
+Tag Table:
+Node: Top264
+Node: Before you begin2637
+Node: Part 1 Your first page3266
+Node: Step 1 Get some text3922
+Node: Step 2 Turn the mode on4268
+Node: Step 3 Rest on a word4727
+Node: Step 4 Mark what you know5094
+Node: Step 5 Ignore a name5880
+Node: Step 6 Look a word up properly6349
+Node: Step 7 Leave a note6738
+Node: Step 8 Turn it off7023
+Node: Jump to unknown words with avy7307
+Node: Part 2 Letting bltzread follow your reading7777
+Node: Step 1 Read8422
+Node: Step 2 Finish the session8674
+Node: Step 3 Move your bookmark9277
+Node: Step 4 If you read everything easily9657
+Node: Step 5 Closing the buffer10012
+Node: A warning about books10408
+Node: Part 3 Keeping bltzr up to date10710
+Node: Step 1 Open the review list11215
+Node: Step 2 Decide11503
+Node: Step 3 Apply11890
+Node: Step 4 Check12180
+Node: Part 4 Basic configuration12400
+Node: Make progress faster or slower12872
+Node: Change what a lookup does13208
+Node: Turn off single-key shortcuts13541
+Node: Colours13946
+Node: Dictionaries14220
+Node: The pasted-text page14986
+Node: Part 5 Choosing how you mark what you read15323
+Node: Step 1 Try them15784
+Node: Step 2 Pick one16083
+Node: Step 3 Skip the confirmation16459
+Node: Part 6 Advanced options16710
+Node: One level for all forms of a word17185
+Node: Different list target per language17649
+Node: Skip the review18011
+Node: Your own skip list files18537
+Node: Your own dictionary18905
+Node: A language that has no spaces19360
+Node: Count repeated words19683
+Node: The card19988
+Node: Per-file language20331
+Node: Part 7 Reading along with subtle20612
+Node: Short dictionary entries21865
+Node: Step 1 Look at the raw entry22616
+Node: Step 2 Write a spec23491
+Node: Step 3 My five dictionaries24653
+Node: Step 4 Test it25372
+Node: If something goes wrong26014
+
+End Tag Table
+
+
+Local Variables:
+coding: utf-8
+Info-documentlanguage: en
+End:
