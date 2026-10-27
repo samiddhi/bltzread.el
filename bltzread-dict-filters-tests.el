@@ -4,6 +4,7 @@
 
 (require 'ert)
 (require 'bltzread-dict-filters)
+(require 'bltzread-dict)
 
 (defconst bltzread-dict-filters-tests--html
   (concat "<div class=\"e\"><span class=\"hw\">dom</span> <i>m</i>"
@@ -58,6 +59,62 @@
     (dolist (d '("A" "B" "C" "D" "E" "Unlisted"))
       (let ((entry (bltzread-dict-shorten d "xx" "raw" "whole")))
         (should (equal (bltzread-dict-display entry nil) "whole"))))))
+
+(ert-deftest bltzread-dict-failed-parse-marked-and-sorted-last ()
+  (let ((bltzread-dict-filters '(("A" :class "hw")))
+        (bltzread-dict-failed-entries-last t))
+    (should (get-text-property 0 'bltzread-parse-failed
+                               (bltzread-dict-shorten "A" "xx" "raw" "whole")))
+    (should-not (get-text-property 0 'bltzread-parse-failed
+                                   (bltzread-dict-shorten "Unlisted" "xx" "raw" "whole")))
+    (let* ((bad (bltzread-dict-shorten "A" "xx" "raw" "bad"))
+           (ok1 (bltzread-dict-shorten "A" "xx" bltzread-dict-filters-tests--html "ok1"))
+           (ok2 "ok2")
+           (bltzread-dictionary-function (lambda (_l _w) (list bad ok1 ok2)))
+           (bltzread-dict--cache (make-hash-table :test 'equal)))
+      (should (equal (bltzread-dict-lookup "xx" '("w")) (list ok1 ok2 bad)))
+      (let ((bltzread-dict-failed-entries-last nil)
+            (bltzread-dict--cache (make-hash-table :test 'equal)))
+        (should (equal (bltzread-dict-lookup "xx" '("w")) (list bad ok1 ok2)))))))
+
+(defconst bltzread-dict-filters-tests--ref
+  "<span class=\"xr\"><a href=\"bword://spotka%C4%87\" title=\"x\">spotkać </a></span>")
+
+(ert-deftest bltzread-dict-follow-targets ()
+  (should (equal (bltzread-dict-follow-targets '(:class "x" :follow t)
+                                               bltzread-dict-filters-tests--ref)
+                 '("spotkać")))
+  (should (equal (bltzread-dict-follow-targets '(:follow "see \\([a-z]+\\)") "see foo, see bar")
+                 '("foo" "bar")))
+  (should (equal (bltzread-dict-follow-targets '(:follow (lambda (_) '("a"))) "") '("a")))
+  (should-not (bltzread-dict-follow-targets '(:class "x") bltzread-dict-filters-tests--ref))
+  (should-not (bltzread-dict-follow-targets "x" bltzread-dict-filters-tests--ref)))
+
+(ert-deftest bltzread-dict-follow-fills-in-a-bare-reference ()
+  (let* ((bltzread-dict-filters '(("D" :class "trans" :follow t)))
+         (asked nil)
+         (target (propertize "D\nwhole target" 'bltzread-short "to meet"))
+         (entry (bltzread-dict-shorten
+                 "D" "xx" bltzread-dict-filters-tests--ref "D\nsee"
+                 (lambda (w) (push w asked) (list target)))))
+    (should (equal asked '("spotkać")))
+    (should (equal (bltzread-dict-display entry nil) "→ spotkać\nto meet"))
+    (should (equal (bltzread-dict-display entry t) "D\nsee\n\n→ spotkać\nwhole target"))
+    (should-not (get-text-property 0 'bltzread-parse-failed entry))))
+
+(ert-deftest bltzread-dict-follow-leaves-entries-with-content-alone ()
+  (let ((bltzread-dict-filters '(("D" :class "hw" :follow t))))
+    (should (equal (bltzread-dict-display
+                    (bltzread-dict-shorten "D" "xx" bltzread-dict-filters-tests--html "D\nw"
+                                           (lambda (_) (error "must not follow")))
+                    nil)
+                   "dom"))))
+
+(ert-deftest bltzread-dict-follow-nothing-found-is-a-failed-parse ()
+  (let ((bltzread-dict-filters '(("D" :class "trans" :follow t))))
+    (should (get-text-property 0 'bltzread-parse-failed
+                               (bltzread-dict-shorten "D" "xx" bltzread-dict-filters-tests--ref
+                                                      "D\nsee" (lambda (_) nil))))))
 
 (provide 'bltzread-dict-filters-tests)
 ;;; bltzread-dict-filters-tests.el ends here

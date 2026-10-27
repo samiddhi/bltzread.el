@@ -2,6 +2,10 @@
 
 ;; Copyright (C) 2026 smdi
 
+;; Author: smdi <bkhpanigha@gmail.com>
+;; SPDX-License-Identifier: GPL-3.0-or-later
+;; This file is part of bltzread; see bltzread.el for the license notice.
+
 ;;; Commentary:
 
 ;; `bltzread-avy-unknown' tags every unknown word in view with an avy hint.
@@ -24,18 +28,18 @@
 (defun bltzread-avy--candidates (&optional beg end)
   "Unknown words from BEG to END (default: the window), as avy candidates."
   (let ((beg (or beg (window-start))) (end (or end (window-end nil t))) cands)
-    (dolist (ov (bltzread--word-overlays beg end))
-      (when (bltzread--unknown-p ov)
+    (dolist (ov (bltzread-word-overlays beg end))
+      (when (bltzread-unknown-word-p ov)
         (push (cons (cons (overlay-start ov) (overlay-end ov)) (selected-window)) cands)))
     (nreverse cands)))
 
 ;;;###autoload
 (defun bltzread-avy-unknown ()
   "Tag the unknown words in view with avy hints and go to the one you pick.
-Escape or C-g removes the tags and starts `avy-goto-char-timer' instead."
+Escape or \\[keyboard-quit] removes the tags and starts `avy-goto-char-timer' instead."
   (interactive)
-  (unless (require 'avy nil t) (user-error "avy is not installed"))
-  (unless bltzread-mode (user-error "bltzread-mode is not on"))
+  (unless (require 'avy nil t) (user-error "Avy is not installed"))
+  (unless bltzread-mode (user-error "Mode `bltzread-mode' is not on"))
   (let* ((cands (or (bltzread-avy--candidates) (user-error "No unknown words in view")))
          (fallback nil)
          (avy-handler-function

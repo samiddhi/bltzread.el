@@ -1,13 +1,9 @@
 #+title: bltzread Tutorial
-#+texinfo_filename: bltzread-tutorial.info
-#+texinfo_dir_category: Emacs misc features
-#+texinfo_dir_title: bltzread-tutorial: (bltzread-tutorial)
-#+texinfo_dir_desc: Step-by-step guide to the bltzread reading mode
 #+options: toc:t num:t author:nil date:nil
 
 * Before you begin
 
-This tutorial takes you from your first coloured page to a setup that suits you. Each step says what to do and what you should see. If you want to look up what an option means, the /bltzread Reference Manual/ has all of them.
+This tutorial takes you from your first coloured page to a setup that suits you. Each step says what to do and what you should see. If you want to look up what an option means, the manual (=M-x bltzread-manual=) has all of them.
 
 You need:
 
@@ -29,20 +25,20 @@ You should see: after a moment, words are coloured. Strong yellow means new. Wor
 Move the cursor onto a coloured word and wait half a second. A small card appears with the word, its level and, if you set up a dictionary, its meaning.
 
 ** Step 4. Mark what you know
-With the cursor on a word, press =5= if you know it perfectly. The colour disappears. Press =1= to make it new again. Press =3= to say "familiar".
+With the cursor on a word, press =\[bltzread-set-level]= with a digit: =5= if you know it perfectly. The colour disappears. Press =1= to make it new again. Press =3= to say "familiar".
 
-Press =}= to jump to the next word you do not know yet. Press ={= to go back. (=s n= and =s p= do the same.) Put a count first to jump further: =C-5 }= jumps five words (=M-5 }= in a terminal).
+Press =\[bltzread-next-unknown]= to jump to the next word you do not know yet. Press =\[bltzread-previous-unknown]= to go back. (=s n= and =s p= do the same.) Put a count first to jump further.
 
-A level covers every form of the word, so =3= on /hiše/ also sets /hiša/. Made a mistake? Press =u=, or the ordinary undo key, as often as you like; redo works too.
+A level covers every form of the word, so =3= on /hiše/ also sets /hiša/. Made a mistake? Press =\[bltzread-undo]=, or the ordinary undo key, as often as you like; redo works too.
 
 ** Step 5. Ignore a name
-Put the cursor on a name and press =i=. It turns grey and bltzread will stop counting it. Press =i= again to bring it back. If a card is in your way, press =c= to close it; =d= shows the next dictionary entry when there are several.
+Put the cursor on a name and press =\[bltzread-ignore]=. It turns grey and bltzread will stop counting it. Press it again to bring the word back. If a card is in your way, press =\[bltzread-close-popup]= to close it; =\[bltzread-next-entry]= shows the next dictionary entry when there are several.
 
 ** Step 6. Look a word up properly
-Press =l= on a word, or double-click it. A longer entry appears. Looking a word up tells bltzread you did not know it: it restarts that word's progress.
+Press =\[bltzread-lookup]= on a word, or double-click it. A longer entry appears. Looking a word up tells bltzread you did not know it: it restarts that word's progress.
 
 ** Step 7. Leave a note
-Press =N=, type your own hint, press Enter. Next time the card shows it.
+Press =\[bltzread-note]=, type your own hint, press Enter. Next time the card shows it.
 
 ** Step 8. Turn it off
 Run =M-x bltzread-mode= again. The colours go and the buffer is editable.
@@ -106,12 +102,13 @@ The four numbers are clean reads needed to leave level 1, 2, 3 and 4.
 #+end_src
 A word you look up now also goes down one level.
 
-** Turn off single-key shortcuts
-If the digit keys clash with another mode:
+** Change a key
+The single keys work only while the buffer is read-only, so they never get in the way of typing. To move or remove one:
 #+begin_src emacs-lisp
-(setq bltzread-direct-keys nil)
+(keymap-unset bltzread-mode-map "N" t)
+(keymap-set bltzread-mode-map "n" (bltzread-when-read-only #'bltzread-note))
 #+end_src
-You still have =s 3= and the rest. The prefix is =bltzread-prefix-key= (default =s=).
+The rarer commands follow the prefix =bltzread-prefix-key= (default =s=, so =s 3=); set it to another key in Customize, or to nil for none.
 
 ** Colours
 Run =M-x customize-face RET bltzread-level-1 RET=. Change the background. Do the same for the others.
@@ -149,7 +146,7 @@ Choices: =farthest=, =points=, =paragraphs=, =lines=. You can switch during read
 
 ** Step 3. Skip the confirmation
 #+begin_src emacs-lisp
-(setq bltzread-range-confirm nil)
+(setq bltzread-session-confirm nil)
 #+end_src
 
 * Part 6: Advanced options
@@ -206,7 +203,7 @@ A word seen five times in the range gets five clean reads.
 
 ** The card
 #+begin_src emacs-lisp
-(setq bltzread-popup-trigger 'manual     ; only when you press s .
+(setq bltzread-popup-trigger 'manual     ; only when you press .
       bltzread-popup-style 'side-window  ; never a floating box
       bltzread-popup-max-lines 12)
 #+end_src
@@ -221,7 +218,7 @@ Put this at the end of a file so bltzread knows its language:
 
 * Part 7: Reading along with subtle
 
-If you play audio or video with subtle, bltzread can credit only what was played. Put this in your init file:
+If you play audio or video with subtle, bltzread can credit only what was played. Once subtle is loaded, bltzread already connects itself: blitz playback follows the first unknown word and opens its card, and the card shows the key of =subtle-blitz-toggle=. The rest is up to you. Put this in your init file:
 #+begin_src emacs-lisp
 (setq bltzread-range-farthest-source #'subtle-played-through-position
       bltzread-range-start-function  #'subtle-played-start-position)
@@ -235,7 +232,7 @@ If you play audio or video with subtle, bltzread can credit only what was played
 (add-hook 'subtle-pause-hook
           (lambda () (when bltzread-mode (bltzread-avy-unknown))))
 #+end_src
-Now bltzread is on for the first subtitle file only. Press =p= to pause and the unknown words in view get avy hints; pick one to see its card. In a subtitle buffer the same single keys work (=1=-=5=, =l=, =}=, ={=); subtle keeps =p f b F B ] [ = ) ( RET r h ? q= and the prefix =s=. The first load of a long transcript takes a moment while bltzr reads all its words. See the reference manual for the details.
+Now bltzread is on for the first subtitle file only. Pause and the unknown words in view get avy hints; pick one to see its card. In a subtitle buffer the same single keys work; subtle keeps its own keys and the prefix =s=. The first load of a long transcript takes a moment while bltzr reads all its words. The manual has the details.
 
 * Short dictionary entries
 
@@ -296,5 +293,9 @@ This returns ="house\nfamily"=. Lookups are cached with the entry; run =M-x bltz
 
 - No colours :: Check =bltzr list-languages= and that the language code is right.
 - No dictionary text :: Run =sdcv -l -2 YOUR-FOLDER= in a terminal and compare names with =bltzread-sdcv-dictionaries=.
-- Keys do nothing :: Another mode may have taken them. Use the =s= prefix, or set =bltzread-direct-keys= to nil.
+- Keys do nothing :: The single keys work only in a read-only buffer. Another mode may also have taken them; use the =s= prefix, or rebind them.
 - Words keep returning to level 1 :: You may be looking them up; each lookup restarts their count.
+
+* Where next
+
+The manual (=M-x bltzread-manual=) describes every command and option, and the chapter /Extending bltzread/ shows how to change the card, the dictionary, the tokenizer and what happens on each level change.

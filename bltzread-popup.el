@@ -6,8 +6,11 @@
 
 ;; A bordered, coloured box built as a pure string from rows.  In a
 ;; graphical Emacs it floats in a child frame above the word; in a
-;; terminal it fills a bottom side window.  The design follows
-;; subtle-popup.el.
+;; terminal it fills a bottom side window.
+;;
+;; NOTE: this file is the sibling duplicate of `subtle-popup.el' of the
+;; subtle package; the two draw the same box and are kept apart on purpose
+;; so that neither package needs the other.  Change one, look at the other.
 
 ;;; Code:
 
@@ -63,6 +66,10 @@
   "TEXT styled as secondary text."
   (propertize text 'face 'bltzread-popup-dim))
 
+(defun bltzread-popup-text-width ()
+  "Width of popup text: `bltzread-popup-width' clamped to the selected frame."
+  (max 10 (min bltzread-popup-width (- (frame-width) 6))))
+
 (defun bltzread-popup-wrap (text width max-lines)
   "TEXT wrapped to WIDTH columns, at most MAX-LINES lines, as a list."
   (let ((lines (with-temp-buffer
@@ -87,8 +94,11 @@
     (current-buffer)))
 
 (defun bltzread-popup--frame-parameters (parent box)
-  "Parameters of a borderless, unfocusable child frame of PARENT fitting BOX."
-  `((parent-frame . ,parent)
+  "Parameters of a borderless, unfocusable child frame of PARENT fitting BOX.
+Those in `bltzread-popup-frame-parameters' come first and so win."
+  (append
+   bltzread-popup-frame-parameters
+   `((parent-frame . ,parent)
     (width . ,(+ 2 (apply #'max (mapcar #'string-width (split-string box "\n")))))
     (height . ,(length (split-string box "\n"))) (name . "bltzread") (minibuffer . nil)
     (undecorated . t) (no-accept-focus . t) (no-focus-on-map . t)
@@ -96,7 +106,7 @@
     (internal-border-width . 0) (child-frame-border-width . 0)
     (menu-bar-lines . 0) (tool-bar-lines . 0) (tab-bar-lines . 0)
     (left-fringe . 0) (right-fringe . 0) (vertical-scroll-bars . nil)
-    (horizontal-scroll-bars . nil) (cursor-type . nil)))
+    (horizontal-scroll-bars . nil) (cursor-type . nil))))
 
 (defun bltzread-popup--gap ()
   "Gap in pixels between the word and the box above it."
@@ -105,11 +115,6 @@
 (defvar bltzread-popup--pos nil "Buffer position of the word the floating popup is about.")
 (defvar bltzread-popup--pad nil "Overlay of blank lines made when the text could not scroll further.")
 (defvar bltzread-popup--refresh-timer nil)
-
-(defvar bltzread-popup-scroll-hook nil
-  "Normal hook run, with the window selected, after the popup scrolled it.
-A package that follows the window's start position can use it to learn that
-this scroll was not the user's.")
 
 (defun bltzread-popup-scroll-lines (free need line headroom)
   "Lines to scroll so NEED pixels are free above a word that has FREE.
@@ -128,19 +133,44 @@ still move down before it would leave the window."
             (+ (nth 1 edges) (window-header-line-height win) (cdr xy))))))
 
 (defun bltzread-popup--remove-pad ()
+  "Delete the blank lines made above the first visible line."
   (when (overlayp bltzread-popup--pad)
     (delete-overlay bltzread-popup--pad))
   (setq bltzread-popup--pad nil))
 
+(defun bltzread-popup--pad-lines (win lines)
+  "Show LINES blank lines above the first visible line of WIN."
+  (let* ((buffer (window-buffer win))
+         (start (window-start win)))
+    (setq bltzread-popup--pad (make-overlay start start buffer))
+    (overlay-put bltzread-popup--pad 'before-string (make-string lines ?\n))
+    (with-selected-window win (redisplay t))))
+
 (defun bltzread-popup--make-room (win pos need)
-  "Scroll WIN, if it must, so NEED pixels are free above the word at POS.
-The text moves down, as when scrolling back; at the top of the buffer
-blank lines are added instead, never more than the word needs.  Any blank
-lines of an earlier popup are dropped first, so they never accumulate.  The
-popup is never put below the word."
+  "Make NEED pixels free above the word at POS in WIN, if it must.
+Per `bltzread-popup-make-room' the text is padded above or scrolled down,
+never more than the word needs.  Any blank lines of an earlier popup are
+dropped first, so they never accumulate.  The popup is never put below
+the word."
   (when (overlayp bltzread-popup--pad)
     (bltzread-popup--remove-pad)
     (with-selected-window win (redisplay t)))
+  (if (eq bltzread-popup-make-room 'pad)
+      (when-let* ((xy (bltzread-popup--word-xy win pos))
+                  (line (default-line-height))
+                  (word-y (- (cdr xy) (nth 1 (window-pixel-edges win))
+                             (window-header-line-height win)))
+                  (lines (bltzread-popup-scroll-lines
+                          word-y need line
+                          (- (window-body-height win t) word-y line)))
+                  ((> lines 0)))
+        (bltzread-popup--pad-lines win lines))
+    (bltzread-popup--scroll-room win pos need)))
+
+(defun bltzread-popup--scroll-room (win pos need)
+  "Scroll WIN, if it must, so NEED pixels are free above the word at POS.
+The text moves down, as when scrolling back; at the top of the buffer
+blank lines are added instead."
   (let ((tries 0))
     (while-let ((xy (and (< tries 3) (bltzread-popup--word-xy win pos)))
                 (line (default-line-height))
@@ -181,6 +211,7 @@ Return nil if the word is not on screen or the box would cover it."
       t)))
 
 (defun bltzread-popup--cancel-refresh ()
+  "Cancel the pending refresh of the floating popup."
   (when (timerp bltzread-popup--refresh-timer)
     (cancel-timer bltzread-popup--refresh-timer))
   (setq bltzread-popup--refresh-timer nil))
@@ -191,8 +222,9 @@ Return nil if the word is not on screen or the box would cover it."
   (when (and (frame-live-p bltzread-popup--frame) bltzread-popup--pos
              (eq bltzread-popup--owner (window-buffer (selected-window))))
     (unless (and (pos-visible-in-window-p bltzread-popup--pos)
-                 (bltzread-popup--place bltzread-popup--frame (selected-frame)
-                                        bltzread-popup--pos))
+                 (or (eq bltzread-popup-on-scroll 'stay)
+                     (bltzread-popup--place bltzread-popup--frame (selected-frame)
+                                            bltzread-popup--pos t)))
       (bltzread-popup-hide))))
 
 (defun bltzread-popup--on-scroll (window _start)
@@ -221,18 +253,24 @@ Return nil if the word is not on screen or the box would cover it."
 (defvar bltzread-popup--used-window nil
   "The side window the latest `bltzread-popup-show' drew in, or nil.")
 
+(defun bltzread-popup--display (buffer side)
+  "Display BUFFER in a new window: per `bltzread-popup-display-action' or on SIDE."
+  (if bltzread-popup-display-action
+      (display-buffer buffer bltzread-popup-display-action)
+    (display-buffer-in-side-window
+     buffer `((side . ,side) (slot . 0)
+              (window-height . fit-window-to-buffer)
+              (window-parameters . ((no-other-window . t)))))))
+
 (defun bltzread-popup--show-side-window (buffer &optional side)
   "Show BUFFER in a side window on SIDE (default bottom).
 An existing window showing BUFFER on that side is reused and refitted, so
 moving between words does not close and reopen it."
   (let* ((side (or side 'bottom))
-         (old (seq-find (lambda (w) (eq (window-parameter w 'window-side) side))
+         (old (seq-find (lambda (w) (or bltzread-popup-display-action
+                                        (eq (window-parameter w 'window-side) side)))
                         (get-buffer-window-list buffer nil t)))
-         (win (or old
-                  (display-buffer-in-side-window
-                   buffer `((side . ,side) (slot . 0)
-                            (window-height . fit-window-to-buffer)
-                            (window-parameters . ((no-other-window . t))))))))
+         (win (or old (bltzread-popup--display buffer side))))
     (when (and old (window-live-p old))
       (let ((window-size-fixed nil))
         (fit-window-to-buffer old)))
@@ -308,7 +346,7 @@ POS is the buffer position of the word the popup is about (default point)."
   (unless (frame-focus-state) (bltzread-popup-hide)))
 
 (defun bltzread-popup-install-hooks ()
-  "Make the popup vanish when the buffer, window, focus or minibuffer changes."
+  "Hide the popup when the buffer, window, focus or minibuffer changes."
   (add-hook 'window-selection-change-functions #'bltzread-popup--sync)
   (add-hook 'window-buffer-change-functions #'bltzread-popup--sync)
   (add-hook 'window-scroll-functions #'bltzread-popup--on-scroll)

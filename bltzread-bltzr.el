@@ -2,6 +2,10 @@
 
 ;; Copyright (C) 2026 smdi
 
+;; Author: smdi <bkhpanigha@gmail.com>
+;; SPDX-License-Identifier: GPL-3.0-or-later
+;; This file is part of bltzread; see bltzread.el for the license notice.
+
 ;;; Commentary:
 
 ;; bltzr reports no buffer positions, so Emacs finds the words itself with
@@ -30,11 +34,14 @@
   "Word regexp for LANG."
   (or (cdr (assoc lang bltzread-word-regexp-alist)) bltzread-word-regexp))
 
-(defun bltzread-bltzr-tokenize (beg end regexp)
-  "List of (BEG END FORM) for each word in BEG..END; FORM is lowercased.
-With `bltzread-skip-numerals', matches containing no letter (2, 5.26, 1990-1995)
-are not words."
-  (let (tokens)
+(defun bltzread-bltzr-tokenize (beg end lang)
+  "Return a list of (BEG END FORM) for each word in BEG..END in language LANG.
+FORM is lowercased.  Words are found with the regexp of
+`bltzread-bltzr-regexp'.  With `bltzread-skip-numerals', matches containing
+no letter (2, 5.26, 1990-1995) are not words.  This is the default
+`bltzread-tokenizer-function'."
+  (let ((regexp (bltzread-bltzr-regexp lang))
+        tokens)
     (save-excursion
       (goto-char beg)
       (while (re-search-forward regexp end t)
@@ -47,8 +54,15 @@ are not words."
 
 ;;; Running bltzr
 
+(defun bltzread-bltzr--require-executable ()
+  "Signal a `user-error' unless the bltzr executable can be found."
+  (unless (executable-find bltzread-bltzr-executable)
+    (user-error "Cannot find `%s'; install bltzr or set `bltzread-bltzr-executable'"
+                bltzread-bltzr-executable)))
+
 (defun bltzread-bltzr--run (lang input)
   "Run `bltzr blitz' for LANG on INPUT and return its parsed JSON, or signal."
+  (bltzread-bltzr--require-executable)
   (with-temp-buffer
     (let* ((out-buffer (current-buffer))
            (err-file (make-temp-file "bltzread-bltzr"))
@@ -63,14 +77,15 @@ are not words."
       (prog1
           (if (eql status 0)
               (json-parse-string out :object-type 'alist :array-type 'list)
-            (user-error "bltzr failed (%s): %s" status
+            (user-error "Bltzr failed (%s): %s" status
                         (string-trim (with-temp-buffer
                                        (insert-file-contents err-file)
                                        (buffer-string)))))
         (delete-file err-file)))))
 
 (defun bltzread-bltzr--pass (lang forms table)
-  "Ask bltzr about FORMS and record what it reports in TABLE.  Return the count."
+  "Ask bltzr in LANG about FORMS and record what it reports in TABLE.
+Return the count."
   (let ((data (bltzread-bltzr--run lang (mapconcat (lambda (f) (concat f ".")) forms "\n")))
         (found 0))
     (dolist (entry data)
@@ -85,7 +100,8 @@ are not words."
     found))
 
 (defun bltzread-bltzr-lemmas (lang forms)
-  "Hash table of spelling -> basic words for FORMS, a list of lowercase strings.
+  "Return a hash table of spelling -> basic words for FORMS in LANG.
+FORMS is a list of lowercase strings.
 Spellings bltzr does not report map to themselves."
   (let* ((cache (or (gethash lang bltzread-bltzr--cache)
                     (puthash lang (make-hash-table :test 'equal) bltzread-bltzr--cache)))
@@ -106,10 +122,11 @@ Spellings bltzr does not report map to themselves."
     cache))
 
 (defun bltzread-bltzr-languages ()
-  "Language codes known to bltzr."
+  "Language codes known to bltzr, or nil when bltzr is missing."
   (with-temp-buffer
-    (when (eql 0 (apply #'call-process bltzread-bltzr-executable nil t nil
-                        (append '("list-languages") bltzread-bltzr-extra-args)))
+    (when (and (executable-find bltzread-bltzr-executable)
+               (eql 0 (apply #'call-process bltzread-bltzr-executable nil t nil
+                        (append '("list-languages") bltzread-bltzr-extra-args))))
       (goto-char (point-min))
       (let (codes)
         (while (re-search-forward "(\\([a-z]\\{3,4\\}\\))" nil t)
@@ -117,16 +134,18 @@ Spellings bltzr does not report map to themselves."
         (nreverse codes)))))
 
 (defun bltzread-bltzr-detect-language (text)
-  "Language code bltzr guesses TEXT is written in, or nil when it says unknown.
+  "Return the language code for TEXT as guessed by bltzr.
+Return nil when it says unknown.
 Also nil when bltzr cannot be run or does not know `detect-language'."
   (with-temp-buffer
     (let ((out-buffer (current-buffer)))
       (with-temp-buffer
         (insert text)
-        (when (eql 0 (apply #'call-process-region (point-min) (point-max)
+        (when (and (executable-find bltzread-bltzr-executable)
+                   (eql 0 (apply #'call-process-region (point-min) (point-max)
                             bltzread-bltzr-executable nil (list out-buffer nil) nil
                             (append '("detect-language" "--format" "json")
-                                    bltzread-bltzr-extra-args)))
+                                    bltzread-bltzr-extra-args))))
           (let ((lang (ignore-errors
                         (alist-get 'language
                                    (progn (goto-char (point-min))

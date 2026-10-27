@@ -9,6 +9,8 @@
 (require 'cl-lib)
 (require 'bltzread)
 
+(declare-function bltzread-avy--candidates "bltzread-avy")
+
 (defvar bltzread-test--lemmas '(("hiša" . "hiša") ("hiše" . "hiša") ("hišo" . "hiša")
                           ("hišami" . "hiša"))
   "Spelling -> basic word for the stub of bltzr.")
@@ -45,7 +47,7 @@
 (defun bltzread-test-ov (form &optional n)
   "The Nth (default first) word overlay of FORM."
   (nth (or n 0) (seq-filter (lambda (o) (equal (overlay-get o 'bltzread-form) form))
-                            (bltzread--all-words))))
+                            (bltzread-words))))
 
 (defun bltzread-test-go (form &optional n)
   "Put point on the Nth FORM."
@@ -59,16 +61,41 @@
 (ert-deftest bltzread-numerals-are-not-words ()
   (with-temp-buffer
     (insert "2 24 5.26 2,81 1990-1995 COVID-19 3rd Hiša")
-    (should (equal (mapcar #'caddr (bltzread-bltzr-tokenize (point-min) (point-max) bltzread-word-regexp))
+    (should (equal (mapcar #'caddr (bltzread-bltzr-tokenize (point-min) (point-max) "tst"))
                    '("covid-19" "3rd" "hiša")))
     (let ((bltzread-skip-numerals nil))
       (should (member "24" (mapcar #'caddr
-                                   (bltzread-bltzr-tokenize (point-min) (point-max) bltzread-word-regexp)))))))
+                                   (bltzread-bltzr-tokenize (point-min) (point-max) "tst")))))))
 
 (ert-deftest bltzread-numerals-get-no-overlay ()
   (bltzread-test-with-buffer "Hiša 24 hiše 5.26 2,81."
-    (should (equal (mapcar (lambda (o) (overlay-get o 'bltzread-form)) (bltzread--all-words))
+    (should (equal (mapcar (lambda (o) (overlay-get o 'bltzread-form)) (bltzread-words))
                    '("hiša" "hiše")))))
+
+;;; Point tracking
+
+(ert-deftest bltzread-first-unknown-between-skips-known ()
+  (bltzread-test-with-buffer "hiša kruh mleko"
+    (bltzread-test-go "hiša")
+    (bltzread-set-level 5)
+    (should (= (bltzread-first-unknown-between (point-min) (point-max)) 6))
+    (should-not (bltzread-first-unknown-between 1 5))))
+
+(ert-deftest bltzread-subtle-card-only-for-an-unknown-word ()
+  (bltzread-test-with-buffer "hiša kruh mleko"
+    (bltzread-test-go "hiša")
+    (bltzread-set-level 5)
+    (let ((shown 0))
+      (cl-letf (((symbol-function 'bltzread--show-popup) (lambda (&rest _) (cl-incf shown)))
+                ((symbol-function 'window-buffer) (lambda (&rest _) (current-buffer))))
+        ;; point tracking found no unknown word and stayed at the cue start
+        (bltzread-subtle-show-popup (current-buffer) 1)
+        (should (= shown 0))
+        (bltzread-subtle-show-popup (current-buffer) 6)
+        (should (= shown 1))))))
+
+(ert-deftest bltzread-hints-do-not-list-undo ()
+  (should-not (assq 'bltzread-undo bltzread-popup-hints)))
 
 ;;; Levels
 
@@ -89,7 +116,7 @@
 (ert-deftest bltzread-reads-count-for-the-form-only ()
   (let ((bltzread-promotion-thresholds '(1 1 1 1))
         (bltzread-range-method 'points)
-        (bltzread-range-confirm nil)
+        (bltzread-session-confirm nil)
         (bltzread-bookmark-policy 'never))
     (bltzread-test-with-buffer "hiša hiše hišo"
       (bltzread-test-go "hiše")
@@ -195,7 +222,7 @@
 
 (ert-deftest bltzread-lookup-undo-lets-word-count-again ()
   (let ((bltzread-promotion-thresholds '(1 1 1 1))
-        (bltzread-range-method 'points) (bltzread-range-confirm nil) (bltzread-bookmark-policy 'never))
+        (bltzread-range-method 'points) (bltzread-session-confirm nil) (bltzread-bookmark-policy 'never))
     (bltzread-test-with-buffer "hiša kruh"
       (bltzread-test-go "hiša")
       (bltzread-lookup)
@@ -210,7 +237,7 @@
 
 (ert-deftest bltzread-finish-session-and-undo ()
   (let ((bltzread-promotion-thresholds '(1 1 1 1))
-        (bltzread-range-method 'points) (bltzread-range-confirm nil) (bltzread-bookmark-policy 'never))
+        (bltzread-range-method 'points) (bltzread-session-confirm nil) (bltzread-bookmark-policy 'never))
     (bltzread-test-with-buffer "alfa beta gama"
       (bltzread-test-go "beta")
       (bltzread-lookup)
@@ -227,7 +254,7 @@
       (should (gethash "beta" bltzread--lookups)))))
 
 (ert-deftest bltzread-mark-known-whole-word-queues-forms ()
-  (let ((bltzread-range-method 'points) (bltzread-range-confirm nil) (bltzread-bookmark-policy 'never))
+  (let ((bltzread-range-method 'points) (bltzread-session-confirm nil) (bltzread-bookmark-policy 'never))
     (bltzread-test-with-buffer "hiša hiše kruh"
       (bltzread-test-go "hiša")
       (bltzread-range-set-start)
@@ -468,7 +495,7 @@
 
 (ert-deftest bltzread-plain-undo-takes-back-session-and-redo-restores ()
   (let ((bltzread-promotion-thresholds '(1 1 1 1))
-        (bltzread-range-method 'points) (bltzread-range-confirm nil) (bltzread-bookmark-policy 'never))
+        (bltzread-range-method 'points) (bltzread-session-confirm nil) (bltzread-bookmark-policy 'never))
     (bltzread-test-with-buffer "alfa beta"
       (bltzread-test-go "alfa")
       (bltzread-range-set-start)
@@ -538,5 +565,274 @@
       (bltzread--warn-write-policy)
       (should (= shown 1)))))
 
+;;; No-colors, stepping, click, exposure, parse order
+
+(defun bltzread-test--finish-all ()
+  (goto-char (point-min))
+  (bltzread-range-set-start)
+  (goto-char (point-max))
+  (bltzread-range-set-end)
+  (bltzread-finish-session))
+
+(ert-deftest bltzread-no-colors-blocks-manual-but-sessions-progress ()
+  (let ((bltzread-no-colors t) (bltzread-promotion-thresholds '(1 1 1 1))
+        (bltzread-range-method 'points) (bltzread-session-confirm nil) (bltzread-bookmark-policy 'never))
+    (bltzread-test-with-buffer "alfa beta gama"
+      (should (null (overlay-get (bltzread-test-ov "alfa") 'face)))
+      (bltzread-test-go "alfa")
+      (should-error (bltzread-set-level 3) :type 'user-error)
+      (should-error (bltzread-ignore) :type 'user-error)
+      (should-error (bltzread-increment-level) :type 'user-error)
+      (should-error (bltzread-decrement-level) :type 'user-error)
+      (should-error (bltzread-mark-range-known) :type 'user-error)
+      (bltzread-test-go "beta")
+      (bltzread-lookup)
+      (bltzread-test--finish-all)
+      (should (equal (mapcar #'bltzread-test-level '("alfa" "beta" "gama")) '(2 1 2)))
+      (should (null (overlay-get (bltzread-test-ov "alfa") 'face)))
+      (should-not (assq 'bltzread-ignore (bltzread--active-hints)))
+      (should (assq 'bltzread-lookup (bltzread--active-hints)))
+      (bltzread-toggle-colors)
+      (should (overlay-get (bltzread-test-ov "alfa") 'face)))))
+
+(ert-deftest bltzread-increment-decrement-bounds ()
+  (bltzread-test-with-buffer "alfa beta"
+    (bltzread-test-go "alfa")
+    (bltzread-decrement-level)
+    (should (eq (bltzread-test-level "alfa") 1))
+    (bltzread-increment-level)
+    (should (eq (bltzread-test-level "alfa") 2))
+    (bltzread-increment-level 10)
+    (should (eq (bltzread-test-level "alfa") 5))
+    (should (assoc "alfa" (bltzread-state-queue bltzread--state)))
+    (bltzread-increment-level)
+    (should (eq (bltzread-test-level "alfa") 5))
+    (bltzread-decrement-level)
+    (should (eq (bltzread-test-level "alfa") 4))
+    (should (null (bltzread-state-queue bltzread--state)))
+    (bltzread-test-go "beta")
+    (bltzread-ignore)
+    (should-error (bltzread-increment-level) :type 'user-error)))
+
+(ert-deftest bltzread-click-opens-popup-even-without-motion ()
+  (let ((bltzread-popup-only-on-motion t))
+    (bltzread-test-with-buffer "hiša kruh"
+      (bltzread-test-go "hiša")
+      (let ((ov (bltzread-test-ov "hiša")) shown)
+        (cl-letf (((symbol-function 'bltzread-popup-show) (lambda (&rest _) (setq shown t)))
+                  ((symbol-function 'mouse-set-point) #'ignore)
+                  ((symbol-function 'posn-point) (lambda (_) (point)))
+                  ((symbol-function 'event-end) #'identity))
+          (bltzread--dismiss-popup ov)
+          (bltzread-popup-mouse 'e)
+          (should shown)
+          (should (eq bltzread--popup-ov ov))
+          (should (null bltzread--popup-dismissed))
+          (should (gethash "hiša" bltzread--lookups)))))))
+
+(ert-deftest bltzread-click-lookup-count-is-optional ()
+  (let ((bltzread-mouse-click-counts-as-lookup nil))
+    (bltzread-test-with-buffer "hiša"
+      (bltzread-test-go "hiša")
+      (cl-letf (((symbol-function 'bltzread-popup-show) #'ignore)
+                ((symbol-function 'mouse-set-point) #'ignore)
+                ((symbol-function 'posn-point) (lambda (_) (point)))
+                ((symbol-function 'event-end) #'identity))
+        (bltzread-popup-mouse 'e)
+        (should-not (gethash "hiša" bltzread--lookups))))))
+
+(ert-deftest bltzread-exposure-marking-in-queue ()
+  (let ((bltzread-promotion-thresholds '(1 1 1 1))
+        (bltzread-range-method 'points) (bltzread-session-confirm nil) (bltzread-bookmark-policy 'never))
+    (bltzread-test-with-buffer "alfa beta"
+      (bltzread-test-go "alfa") (bltzread-set-level 4)
+      (bltzread-test-go "beta") (bltzread-set-level 5)
+      (should (null (bltzread-state-exposed bltzread--state)))
+      (bltzread-test--finish-all)               ; alfa 4 -> 5 by exposure
+      (should (equal (bltzread-state-exposed bltzread--state) '("alfa")))
+      (let ((snap (bltzread-state-snapshot bltzread--state nil)))
+        (bltzread-test-go "alfa") (bltzread-set-level 5)   ; by hand overrides
+        (should (null (bltzread-state-exposed bltzread--state)))
+        (bltzread-state-restore bltzread--state snap)
+        (should (equal (bltzread-state-exposed bltzread--state) '("alfa"))))
+      (bltzread-state-save bltzread--state)
+      (let ((again (bltzread-state--load "tst")))
+        (should (equal (bltzread-state-exposed again) '("alfa"))))
+      (bltzread-test-go "alfa") (bltzread-set-level 2)
+      (should (null (bltzread-state-exposed bltzread--state))))))
+
+(ert-deftest bltzread-state-without-exposed-key-loads ()
+  (let* ((dir (make-temp-file "bltzread-test" t))
+         (bltzread-state-directory dir)
+         (bltzread-bltzr-config-file (expand-file-name "none.toml" dir)))
+    (with-temp-file (expand-file-name "tst.eld" dir)
+      (prin1 '(:version 1 :words nil :queue (("a" . "a"))) (current-buffer)))
+    (let ((st (bltzread-state--load "tst")))
+      (should (null (bltzread-state-exposed st)))
+      (should (equal (bltzread-state-queue st) '(("a" . "a")))))
+    (delete-directory dir t)))
+
+(ert-deftest bltzread-review-marks-exposure-rows ()
+  (bltzread-test-with-buffer "alfa beta"
+    (setf (bltzread-state-queue bltzread--state) '(("beta" . "beta") ("alfa" . "alfa"))
+          (bltzread-state-exposed bltzread--state) '("alfa"))
+    (with-temp-buffer
+      (bltzread-review-mode)
+      (setq bltzread-review--lang "tst" bltzread-review--actions (make-hash-table :test 'equal))
+      (bltzread-review--refresh)
+      (should (equal (mapcar #'car tabulated-list-entries) '("alfa" "beta")))
+      (let ((row (cadr (car tabulated-list-entries))))
+        (should (equal (aref row 3) "exposure"))
+        (should (eq (get-text-property 0 'face (aref row 0)) 'bltzread-review-exposure)))
+      (should (null (get-text-property 0 'face (aref (cadr (cadr tabulated-list-entries)) 0)))))))
+
 (provide 'bltzread-tests)
+
+;;; Extension points
+
+(ert-deftest bltzread-level-change-hook-gets-key-form-and-levels ()
+  (bltzread-test-with-buffer "alfa beta"
+    (let* (seen (bltzread-level-change-functions (list (lambda (&rest a) (push a seen)))))
+      (bltzread-test-go "alfa")
+      (bltzread-set-level 3)
+      (should (equal (car seen) '("alfa" "alfa" 1 3))))))
+
+(ert-deftest bltzread-lookup-hook-runs-on-lookup ()
+  (bltzread-test-with-buffer "alfa beta"
+    (let* (seen (bltzread-lookup-functions (list (lambda (&rest a) (push a seen)))))
+      (bltzread-test-go "alfa")
+      (bltzread-lookup)
+      (should seen))))
+
+(ert-deftest bltzread-after-annotate-hook-runs ()
+  (bltzread-test-with-buffer "alfa beta"
+    (let* ((n 0) (bltzread-after-annotate-hook (list (lambda () (cl-incf n)))))
+      (bltzread-annotate)
+      (should (= n 1)))))
+
+(ert-deftest bltzread-tokenizer-seam-is-used ()
+  (bltzread-test-with-buffer "alfa beta"
+    (let ((bltzread-tokenizer-function (lambda (_b _e _l) (list (list 1 5 "alfa")))))
+      (bltzread-annotate)
+      (should (equal (mapcar (lambda (o) (overlay-get o 'bltzread-form)) (bltzread-words))
+                     '("alfa"))))))
+
+(ert-deftest bltzread-row-functions-build-the-popup ()
+  (bltzread-test-with-buffer "alfa beta"
+    (let ((bltzread-popup-row-functions (list (lambda (_ov _full) (list "extra row")))))
+      (bltzread-test-go "alfa")
+      (should (equal (bltzread--popup-rows (bltzread-test-ov "alfa") nil) '("extra row"))))))
+
+(ert-deftest bltzread-popup-hooks-run ()
+  (bltzread-test-with-buffer "alfa beta"
+    (let* ((shown 0) (hidden 0)
+          (bltzread-popup-show-hook (list (lambda () (cl-incf shown))))
+          (bltzread-popup-hide-hook (list (lambda () (cl-incf hidden)))))
+      (bltzread-test-go "alfa")
+      (bltzread-popup-at-point)
+      (should (= shown 1))
+      (bltzread-close-popup)
+      (should (= hidden 1)))))
+
+(ert-deftest bltzread-session-finished-hook-gets-history ()
+  (bltzread-test-with-buffer "alfa beta gama"
+    (let* (seen (bltzread-session-finished-functions (list (lambda (e) (push e seen))))
+           (bltzread-range-method 'points) (bltzread-session-confirm nil)
+           (bltzread-bookmark-policy 'never))
+      (bltzread-test-go "alfa")
+      (bltzread-lookup)
+      (bltzread-test--finish-all)
+      (should seen))))
+
+(ert-deftest bltzread-level-5-has-its-own-face ()
+  (should (facep 'bltzread-level-5))
+  (should (= bltzread-known-level 5))
+  (should (bltzread-learning-level-p 4))
+  (should-not (bltzread-learning-level-p 5)))
+
+;;; Keys
+
+(ert-deftest bltzread-direct-keys-work-only-when-read-only ()
+  (bltzread-test-with-buffer "alfa beta"
+    (setq buffer-read-only t)
+    (should (eq (key-binding "l") 'bltzread-lookup))
+    (should (keymapp (key-binding (kbd bltzread-prefix-key))))
+    (setq buffer-read-only nil)
+    (should-not (eq (key-binding "l") 'bltzread-lookup))
+    (should-not (keymapp (key-binding (kbd bltzread-prefix-key))))))
+
+(ert-deftest bltzread-hints-find-keys-in-read-only-buffer ()
+  (bltzread-test-with-buffer "alfa beta"
+    (setq buffer-read-only t)
+    (should (equal (bltzread--key-text 'bltzread-lookup) "l"))
+    (should (equal (bltzread--key-text 'bltzread-set-level) "1-5"))))
+
+(ert-deftest bltzread-hints-skip-shadowed-keys ()
+  (bltzread-test-with-buffer "alfa beta"
+    (setq buffer-read-only t)
+    (let* ((map (make-sparse-keymap))
+           (emulation-mode-map-alists (list (list (cons t map)))))
+      (define-key map "l" #'ignore)
+      (should-not (equal (bltzread--key-text 'bltzread-lookup) "l"))
+      (should (equal (bltzread--key-text 'bltzread-set-level) "1-5")))))
+
+(ert-deftest bltzread-mouse-keys-follow-the-options ()
+  (let ((bltzread-mouse-lookup-key "<mouse-3>") (bltzread-mouse-popup-key nil))
+    (bltzread--install-mouse-keys)
+    (unwind-protect
+        (progn (should (keymap-lookup bltzread--overlay-map "<mouse-3>"))
+               (should-not (keymap-lookup bltzread--overlay-map "<double-mouse-1>")))
+      (setq bltzread-mouse-lookup-key "<double-mouse-1>" bltzread-mouse-popup-key "<mouse-1>")
+      (bltzread--install-mouse-keys))))
+
+;;; Subtle glue
+
+(ert-deftest bltzread-subtle-hint-only-in-a-subtle-session ()
+  (bltzread-test-with-buffer "alfa beta"
+    (cl-letf (((symbol-function 'subtle-active-p) (lambda () t)))
+      (let ((bltzread-popup-hints bltzread-popup-hints))
+        (bltzread-subtle--add-hint)
+        (should (assq 'subtle-point-track-toggle bltzread-popup-hints))))
+    (cl-letf (((symbol-function 'subtle-active-p) (lambda () nil)))
+      (let ((bltzread-popup-hints bltzread-popup-hints))
+        (bltzread-subtle--add-hint)
+        (kill-local-variable 'bltzread-popup-hints)
+        (bltzread-subtle--add-hint)
+        (should-not (assq 'subtle-point-track-toggle bltzread-popup-hints))))))
+
+;;; State and dictionary robustness
+
+(ert-deftest bltzread-corrupt-state-file-is-kept-aside ()
+  (let* ((dir (make-temp-file "bltzread-test" t))
+         (file (expand-file-name "x.eld" dir)))
+    (unwind-protect
+        (progn (with-temp-file file (insert "(((("))
+               (cl-letf (((symbol-function 'display-warning) #'ignore))
+                 (bltzread-state--read-file file))
+               (should (file-exists-p (concat file ".corrupt"))))
+      (delete-directory dir t))))
+
+(ert-deftest bltzread-dictionary-errors-are-not-cached ()
+  (let* ((bltzread-dict--cache (make-hash-table :test 'equal))
+        (n 0)
+        (bltzread-dictionary-function (lambda (_l _w) (cl-incf n) (error "boom"))))
+    (should-not (bltzread-dict-lookup "tst" '("alfa")))
+    (should-not (bltzread-dict-lookup "tst" '("alfa")))
+    (should (= n 2))))
+
+;;; Documentation
+
+(ert-deftest bltzread-documents-fill-in-their-keys ()
+  (dolist (name '("bltzread-manual.org" "bltzread-tutorial.org"))
+    (let ((text (bltzread-doc--text name nil)))
+      (should-not (string-match-p "\\\\\\[bltzread" text))
+      (should-not (string-match-p "M-x bltzread-undo" text)))))
+
+(ert-deftest bltzread-manual-command-shows-a-buffer ()
+  (bltzread-manual)
+  (unwind-protect
+      (should (string-match-p "bltzread Manual"
+                              (with-current-buffer "*bltzread manual*" (buffer-string))))
+    (kill-buffer "*bltzread manual*")))
+
 ;;; bltzread-tests.el ends here

@@ -2,10 +2,15 @@
 
 ;; Copyright (C) 2026 smdi
 
+;; Author: smdi <bkhpanigha@gmail.com>
+;; SPDX-License-Identifier: GPL-3.0-or-later
+;; This file is part of bltzread; see bltzread.el for the license notice.
+
 ;;; Commentary:
 
 ;; `bltzread-dictionary-function' is the one seam: give it a language and words,
-;; get text back.  The default shells out to sdcv, which reads StarDict
+;; get text back.  An entry is, by convention, the dictionary's name, a
+;; newline and then the text (see `bltzread-dictionary-function').  The default shells out to sdcv, which reads StarDict
 ;; dictionaries such as the DSSJ export.  StarDict entries are often HTML;
 ;; they are turned into plain text here.
 
@@ -54,7 +59,7 @@
      ,@body))
 
 (defun bltzread-sdcv--data-args ()
-  "sdcv arguments choosing the data directory."
+  "Return the sdcv arguments choosing the data directory."
   (and bltzread-sdcv-data-dir (list "-x" "-2" (expand-file-name bltzread-sdcv-data-dir))))
 
 (defun bltzread-sdcv--ifo-folders ()
@@ -81,7 +86,8 @@
                         (when (and (executable-find bltzread-sdcv-executable)
                                    (eql 0 (apply #'call-process bltzread-sdcv-executable nil
                                                  '(t nil) nil
-                                                 (append '("-l" "-n") (bltzread-sdcv--data-args)))))
+                                                 (append '("-l" "-n") bltzread-sdcv-extra-args
+                                                         (bltzread-sdcv--data-args)))))
                           (goto-char (point-min))
                           (forward-line 1)
                           (let (acc)
@@ -123,11 +129,14 @@ bookname, ignoring case."
      ((eq bltzread-sdcv-unlisted-languages 'all) 'all)
      (t nil))))
 
-(defun bltzread-sdcv--lookup-one (lang word &optional books)
-  "List of dictionary entries (strings) for exactly WORD, or nil.
-BOOKS, from `bltzread-sdcv--books-for', is looked up when not given."
+(defun bltzread-sdcv--lookup-one (lang word &optional books depth)
+  "Return a list of dictionary entries (strings) for exactly WORD, or nil.
+LANG is the language.
+BOOKS, from `bltzread-sdcv--books-for', is looked up when not given.
+DEPTH counts the links followed to get here (see `bltzread-dict-follow-depth')."
   (let* ((books (or books (bltzread-sdcv--books-for lang)))
          (args (append '("-n" "-j" "-e" "-0" "-1")
+                       bltzread-sdcv-extra-args
                        (bltzread-sdcv--data-args)
                        (and (listp books)
                             (mapcan (lambda (b) (list "-u" b)) books))
@@ -145,11 +154,22 @@ BOOKS, from `bltzread-sdcv--books-for', is looked up when not given."
               (when entries
                 (mapcar
                  (lambda (e)
-                   (let ((raw (or (alist-get 'definition e) "")))
+                   (let ((raw (or (alist-get 'definition e) ""))
+                         (dict (alist-get 'dict e)))
                      (bltzread-dict-shorten
-                      (alist-get 'dict e) lang raw
-                      (format "%s\n%s" (alist-get 'dict e) (bltzread-dict--clean raw)))))
+                      dict lang raw
+                      (format "%s\n%s" dict (bltzread-dict--clean raw))
+                      (and (< (or depth 0) bltzread-dict-follow-depth)
+                           (lambda (target)
+                             (bltzread-sdcv--follow lang target books dict
+                                                    (1+ (or depth 0))))))))
                  entries)))))))))
+
+(defun bltzread-sdcv--follow (lang word books dict depth)
+  "Entries of DICT alone for WORD, reached by following a link to DEPTH."
+  (let ((prefix (concat dict "\n")))
+    (seq-filter (lambda (e) (string-prefix-p prefix e))
+                (bltzread-sdcv--lookup-one lang word books depth))))
 
 (defun bltzread-sdcv-lookup (lang words)
   "Entries (a list of strings) for all of WORDS in sdcv for LANG."
@@ -159,25 +179,46 @@ BOOKS, from `bltzread-sdcv--books-for', is looked up when not given."
                           (mapcar (lambda (w) (bltzread-sdcv--lookup-one lang w books))
                                   words))))))
 
+(defun bltzread-dict--failed-p (entry)
+  "Non-nil when ENTRY has a filter that could not parse it."
+  (and (stringp entry) (> (length entry) 0)
+       (get-text-property 0 'bltzread-parse-failed entry)))
+
+(defun bltzread-dict--order (entries)
+  "ENTRIES with those a filter could not parse last, if the options say so."
+  (if (and bltzread-dict-failed-entries-last (cdr entries))
+      (append (seq-remove #'bltzread-dict--failed-p entries)
+              (seq-filter #'bltzread-dict--failed-p entries))
+    entries))
+
+(defun bltzread-dict--fetch (lang words)
+  "Entries for WORDS in LANG from `bltzread-dictionary-function', as a list.
+An error is reported with `message' and gives `error', which is not cached."
+  (condition-case err
+      (let ((res (funcall bltzread-dictionary-function lang words)))
+        (bltzread-dict--order (if (stringp res) (list res) res)))
+    (error (message "bltzread: dictionary failed: %s" (error-message-string err))
+           'error)))
+
 (defun bltzread-dict-lookup (lang words)
   "List of entries for WORDS in LANG, via `bltzread-dictionary-function'.
 The function may return one string or a list of strings.  Results are
-cached.  Return nil when nothing is found or no dictionary is available."
+cached, except after an error.  Return nil when nothing is found or no
+dictionary is available."
   (let* ((key (cons lang words))
          (hit (gethash key bltzread-dict--cache)))
-    (cond ((eq hit 'none) nil)
-          (hit hit)
-          (t (let* ((res (condition-case nil
-                             (funcall bltzread-dictionary-function lang words)
-                           (error nil)))
-                    (text (if (stringp res) (list res) res)))
-               (puthash key (or text 'none) bltzread-dict--cache)
-               text)))))
+    (if hit
+        (and (listp hit) hit)
+      (let ((text (bltzread-dict--fetch lang words)))
+        (unless (eq text 'error)
+          (puthash key (or text 'none) bltzread-dict--cache))
+        (and (listp text) text)))))
 
 (defun bltzread-dict-cached-p (lang words)
   "Non-nil when the entries for WORDS in LANG are already cached."
   (and (gethash (cons lang words) bltzread-dict--cache) t))
 
+;;;###autoload
 (defun bltzread-dict-clear-cache ()
   "Forget cached dictionary results."
   (interactive)
@@ -185,6 +226,7 @@ cached.  Return nil when nothing is found or no dictionary is available."
   (clrhash bltzread-dict--book-cache)
   (setq bltzread-dict--warned nil))
 
+;;;###autoload
 (defun bltzread-dict-diagnose (&optional word)
   "Show how dictionaries are set up, and try looking up WORD.
 Use this when a language shows no entries or entries from the wrong book."

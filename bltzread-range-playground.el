@@ -45,7 +45,7 @@
   (interactive)
   (pcase-let ((`(,beg . ,end) (bltzread-range-pick)))
     (bltzread-range-highlight beg end)
-    (when (or (not bltzread-range-confirm)
+    (when (or (not bltzread-session-confirm)
               (y-or-n-p (format "Read %d chars, %d words (%s)? "
                                 (- end beg) (bltzread-playground--word-count beg end)
                                 bltzread-range-method)))

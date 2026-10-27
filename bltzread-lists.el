@@ -2,6 +2,10 @@
 
 ;; Copyright (C) 2026 smdi
 
+;; Author: smdi <bkhpanigha@gmail.com>
+;; SPDX-License-Identifier: GPL-3.0-or-later
+;; This file is part of bltzread; see bltzread.el for the license notice.
+
 ;;; Commentary:
 
 ;; bltzr skip lists are UTF-8 files with one word per line; blank lines
@@ -85,6 +89,31 @@ An existing file is first copied to FILE.bak."
         (dolist (w new) (insert w "\n"))
         (write-region (point-min) (point-max) file nil 'silent)))
     new))
+
+(defun bltzread-lists--ask-target ()
+  "Ask which kind of skip list to add to; return its symbol."
+  (intern (completing-read "Add to which list? "
+                           '("exact-words" "word-families") nil t)))
+
+(defun bltzread-lists--entry-word (entry target)
+  "The word of ENTRY, a (FORM . LEMMA), to write for TARGET."
+  (if (eq target 'word-families)
+      (or (cdr entry) (car entry))
+    (car entry)))
+
+;;;###autoload
+(defun bltzread-lists-write-known (lang entries &optional target)
+  "Append ENTRIES, a list of (FORM . LEMMA), to a skip list of LANG.
+TARGET is `exact-words', `word-families' or `ask'; nil means the configured
+one (`bltzread-list-target').  Return (FILE . ADDED).  This is the default
+`bltzread-known-writer-function'."
+  (let* ((target (or target (bltzread-lists-target lang)))
+         (target (if (eq target 'ask) (bltzread-lists--ask-target) target))
+         (file (or (bltzread-lists-file lang target)
+                   (read-file-name (format "File for the %s list: " target))))
+         (words (delq nil (mapcar (lambda (e) (bltzread-lists--entry-word e target))
+                                  entries))))
+    (cons file (bltzread-lists-add file words))))
 
 (provide 'bltzread-lists)
 ;;; bltzread-lists.el ends here

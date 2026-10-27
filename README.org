@@ -1,0 +1,14 @@
+#+title: bltzread
+
+bltzread colours every word of a buffer by how well you know it, using the word lists and lemmatiser of bltzr (the =bltzr= command-line tool). A small card shows the word's level and dictionary entry, single keys change levels, and words rise by themselves as you read them without looking them up. It never edits your text: the marks are overlays. It works in any buffer, including nov.el books and subtle's subtitle buffers.
+
+Requires Emacs 29.1 or newer and =bltzr= on your =PATH=. Optional: =sdcv= with StarDict dictionaries, and =avy=.
+
+Start with =M-x bltzread-mode=, then:
+
+- =M-x bltzread-tutorial= (file =bltzread-tutorial.org=): a guided first use.
+- =M-x bltzread-manual= (file =bltzread-manual.org=, Info manual =bltzread.info=): every command and option, and how to extend bltzread.
+
+Development: =make test=, =make compile=, =make info= (see the Makefile). The tests and =bltzread-range-playground.el= are not part of the package.
+
+GPL-3.0-or-later; see =LICENSE=.

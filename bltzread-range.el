@@ -2,6 +2,10 @@
 
 ;; Copyright (C) 2026 smdi
 
+;; Author: smdi <bkhpanigha@gmail.com>
+;; SPDX-License-Identifier: GPL-3.0-or-later
+;; This file is part of bltzread; see bltzread.el for the license notice.
+
 ;;; Commentary:
 
 ;; Four ways of saying "I read from here to there", all working on the
@@ -13,6 +17,11 @@
 ;;   lines       line numbers appear; you type from/to
 ;;
 ;; `bltzread-range-pick' returns (BEG . END).  Nothing here knows about words.
+
+;;; Commentary:
+
+;; Which part of the text counts as read: tracking of the farthest place
+;; reached, the methods for picking a range and the commands to mark one.
 
 ;;; Code:
 
@@ -52,11 +61,14 @@
 
 (defun bltzread-range-reset (&optional start)
   "Start tracking afresh in this buffer, with reading beginning at START."
-  (let ((start (or start (point-min))))
-    (setq bltzread-range--start (copy-marker start)
-          bltzread-range--end nil
-          bltzread-range--farthest start))
+  (bltzread-range-advance-to (or start (point-min)))
   (bltzread-range-clear-highlight))
+
+(defun bltzread-range-advance-to (pos)
+  "Begin the next stretch of reading at POS: the range just read is done."
+  (setq bltzread-range--start (copy-marker pos)
+        bltzread-range--end nil
+        bltzread-range--farthest pos))
 
 (defun bltzread-range-start ()
   "Position where reading began, or nil."
@@ -124,7 +136,7 @@
     (setq bltzread-range--overlay nil)))
 
 (defun bltzread-range-describe ()
-  "One-line description of the current method and its marks."
+  "Return a one-line description of the current method and its mark state."
   (format "range: %s | start %s | %s"
           bltzread-range-method
           (or (bltzread-range-start) "-")
@@ -154,7 +166,7 @@
                                   (mapcar #'symbol-name bltzread-range-methods)
                                   nil t nil nil
                                   (symbol-name bltzread-range-method)))))
-  (setq bltzread-range-method method)
+  (setq-local bltzread-range-method method)
   (bltzread-range-show-numbers)
   (force-mode-line-update)
   (message "Range method: %s" method))

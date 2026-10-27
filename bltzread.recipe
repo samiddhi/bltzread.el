@@ -1,0 +1,10 @@
+;; Draft MELPA recipe for bltzread.  Not submitted.  To submit, copy this
+;; form to recipes/bltzread in a fork of github.com/melpa/melpa, after
+;; bltzread lives in its own repository with the URL set to match.
+(bltzread
+ :fetcher github
+ :repo "samiddhi/bltzread"
+ :files (:defaults
+         "bltzread.info" "bltzread-manual.org" "bltzread-tutorial.org"
+         (:exclude "bltzread-tests.el" "bltzread-dict-filters-tests.el"
+                   "bltzread-range-playground.el" "bltzr-levels-proposal.md")))
