@@ -218,7 +218,7 @@ Put this at the end of a file so bltzread knows its language:
 
 * Part 7: Reading along with subtle
 
-If you play audio or video with subtle, bltzread can credit only what was played. Once subtle is loaded, bltzread already connects itself: blitz playback follows the first unknown word and opens its card, and the card shows the key of =subtle-blitz-toggle=. The rest is up to you. Put this in your init file:
+If you play audio or video with subtle, bltzread can credit only what was played. Once subtle is loaded, bltzread already connects itself: point tracking follows the first unknown word and opens its card (none opens when a cue has no unknown word), and the card shows the key of =subtle-point-track-toggle=. The rest is up to you. Put this in your init file:
 #+begin_src emacs-lisp
 (setq bltzread-range-farthest-source #'subtle-played-through-position
       bltzread-range-start-function  #'subtle-played-start-position)

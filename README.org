@@ -7,7 +7,7 @@ Requires Emacs 29.1 or newer and =bltzr= on your =PATH=. Optional: =sdcv= with S
 Start with =M-x bltzread-mode=, then:
 
 - =M-x bltzread-tutorial= (file =bltzread-tutorial.org=): a guided first use.
-- =M-x bltzread-manual= (file =bltzread-manual.org=, Info manual =bltzread.info=): every command and option, and how to extend bltzread.
+- =M-x bltzread-manual= (file =bltzread-manual.org=, Info manual =bltzread.info=, which also holds the tutorial): every command and option, and how to extend bltzread.
 
 Development: =make test=, =make compile=, =make info= (see the Makefile). The tests and =bltzread-range-playground.el= are not part of the package.
 

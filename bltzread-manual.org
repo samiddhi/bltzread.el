@@ -119,7 +119,9 @@ The card can show only the part of an entry you care about. bltzread knows nothi
 - A plist =(:class "gloss")= taking the text just after each element with that class (a list for several classes). More keys: =:split " · "= cuts each piece into lines, =:max 5= keeps the first five, =:join ", "= puts the lines on one line.
 - A function taking the entry text, for anything else.
 
-Tags and entities are removed and repeated lines dropped. The headword and the dictionary name are not repeated. If a spec finds nothing the card falls back to the whole entry on purpose. The lookup key still shows the whole entry. Entries are cached with the filter; run =M-x bltzread-dict-clear-cache= after changing a spec. The tutorial walks through writing one.
+Tags and entities are removed and repeated lines dropped. The headword and the dictionary name are not repeated. If a spec finds nothing the card falls back to the whole entry on purpose. The lookup key still shows the whole entry.
+
+Some entries only point to another word ("see X"), so the filter finds nothing. Add =:follow t= to the spec and bltzread follows the =bword://= links of the entry, looks the target up in the same dictionary, and shows "→ target" with the target's short form. =:follow= can also be a regexp whose first group is the word, or a function returning a list of words. =bltzread-dict-follow-depth= (default 3) limits how many links in a row are followed. Example: =("pol" :regexp "class=\"trans\">\\([^<]*\\)" :max 6 :follow t)=. Entries are cached with the filter; run =M-x bltzread-dict-clear-cache= after changing a spec. The tutorial walks through writing one.
 
 * Reading sessions
 
@@ -335,7 +337,7 @@ The fifth level has the empty face =bltzread-level-5=. Give it a colour with =M-
 
 *** Wiring subtle
 
-subtle plays audio or video in mpv and shows its subtitles as text. Once subtle is loaded, bltzread connects itself (file =bltzread-subtle.el=): blitz playback follows the first unknown word of each cue and opens its card by itself (and closes the card of the word before), the scrolling the card makes does not count as the user's scrolling, and the card's hint row shows the key of =subtle-blitz-toggle= during a subtle session. Nothing else is needed for those. The rest is your choice:
+subtle plays audio or video in mpv and shows its subtitles as text. Once subtle is loaded, bltzread connects itself (file =bltzread-subtle.el=): point tracking follows the first unknown word of each cue and opens its card by itself (and closes the card of the word before). When point only goes to the start of a cue because it has no unknown word, no card opens; a click or key on a word still does, the scrolling the card makes does not count as the user's scrolling, and the card's hint row shows the key of =subtle-point-track-toggle= ("track point") during a subtle session. Nothing else is needed for those. The rest is your choice:
 
 #+begin_src emacs-lisp
 (setq bltzread-range-farthest-source #'subtle-played-through-position
